@@ -7,6 +7,7 @@ resources/
 *.tab.c
 *.tab.h
 *.bin
+*.dasm
 gmon.out
 
 todo
