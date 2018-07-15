@@ -1,13 +1,24 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "assemble.h"
 
 bin_buffer_t* buffer_make()
 {
     bin_buffer_t* buffer = (bin_buffer_t*)malloc(sizeof(bin_buffer_t));
+    if (!buffer)
+    {
+        printf("Could not allocate memory for buffer\n");
+        exit(-1);
+    }
     buffer->capacity = 256;
     buffer->size = 0;
     buffer->data = (uint16_t*)malloc(256 * sizeof(uint16_t));
+    if (!buffer->data)
+    {
+        printf("Could not allocate memory for buffer data\n");
+        exit(-1);
+    }
     return buffer;
 }
 
@@ -63,7 +74,15 @@ bin_buffer_t* assemble(ast_t* ast)
         if (stmt->nodetype == AST_INSTR)
         {
             struct ast_instr* instr = (struct ast_instr*)stmt;
-            buffer_append(buffer, assemble_instr(instr));
+            uint16_t assembled = assemble_instr(instr);
+#ifdef _DEBUG
+            printf("opcode: %02x, a: %02x, b: %02x -> %04x\n",
+                    instr->opcode,
+                    instr->a->id,
+                    instr->b->id,
+                    assembled);
+#endif
+            buffer_append(buffer, assembled);
             if (has_next_word(instr->a))
                 buffer_append(buffer, instr->a->nextword);
             if (has_next_word(instr->b))

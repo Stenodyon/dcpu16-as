@@ -73,13 +73,22 @@ void yyerror(ast_t ** _result, const char *s);
 program: dasm { *_result = $1; };
 
 dasm: %empty { $$ = ast_make(); }
-    | NEWLINE dasm { $$ = $2; }
-    | statement NEWLINE dasm {
-        ast_t* ast = $3;
+    | statement {
+        ast_t* ast = ast_make();
         ast_append(ast, $1);
         $$ = ast;
     }
+    | dasm newlines statement {
+        ast_t* ast = $1;
+        ast_append(ast, $3);
+        $$ = ast;
+    }
+    | dasm newlines { $$ = $1; }
     ;
+
+newlines: NEWLINE
+        | newlines NEWLINE
+        ;
 
 register:
           A { $$ = ast_make_operand(0x00, 0); }
@@ -176,13 +185,13 @@ unopcode_r: JSR { $$ = ast_make_operand(0x01, 0); }
           ;
 
 instruction: bin_opcode writable_operand COLON readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr($1, $2, $4); }
+            $$ = (struct ast_statement*)ast_make_instr($1, $4, $2); }
            | test_opcode readable_operand COLON readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr($1, $2, $4); }
+            $$ = (struct ast_statement*)ast_make_instr($1, $4, $2); }
            | unopcode_w writable_operand {
-            $$ = (struct ast_statement*)ast_make_instr(0, $1, $2); }
+            $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
            | unopcode_r readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr(0, $1, $2); }
+            $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
            ;
 
 statement: instruction { $$ = $1; }

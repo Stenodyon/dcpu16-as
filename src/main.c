@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #include "ast.h"
@@ -20,7 +21,9 @@ int main(int argc, char ** argv)
         exit(-1);
     }
 
-    //yydebug = 1;
+#ifdef _DEBUG
+    yydebug = 1;
+#endif
 
     yyin = fopen(argv[1], "r");
 
