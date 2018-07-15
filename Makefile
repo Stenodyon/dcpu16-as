@@ -19,17 +19,19 @@ else
     EXT=
 endif
 
-BIN=$(NAME)$(EXT)
-BIN_DEBUG=$(NAME).debug$(EXT)
-BIN_TEST=$(NAME).test$(EXT)
+BIN:=$(NAME)$(EXT)
+BIN_DEBUG:=$(NAME).debug$(EXT)
+BIN_TEST:=$(NAME).test$(EXT)
 
-LEX_SRC=$(shell find $(SRC_DIR) -type f -name '*.l')
-BISON_SRC=$(shell find $(SRC_DIR) -type f -name '*.y')
-SRC=$(shell find $(SRC_DIR) -type f -name '*.cpp') $(LEX_SRC:.l=.yy.c) $(BISON_SRC:.y=.tab.c)
-OBJ=$(SRC:$(SRC_DIR)%.c=$(BUILD_DIR)%.o)
+LEX_SRC:=$(shell find $(SRC_DIR) -type f -name '*.l')
+BISON_SRC:=$(shell find $(SRC_DIR) -type f -name '*.y')
+SRC:=$(shell find $(SRC_DIR) -type f -name '*.c') $(LEX_SRC:.l=.yy.c) $(BISON_SRC:.y=.tab.c)
+OBJ:=$(SRC:$(SRC_DIR)%.c=$(BUILD_DIR)%.o)
 
-TEST_SRC=$(shell find $(TESTS_DIR) -type f -name '*.cpp')
-TEST_OBJ=$(TEST_SRC:$(TESTS_DIR)%.c=$(BUILD_DIR)tests/%.o)
+INTERMEDIATES:=$(LEX_SRC:.l=.yy.c) $(BISON_SRC:.y=.tab.c) $(BISON_SRC:.y=.tab.h)
+
+TEST_SRC:=$(shell find $(TESTS_DIR) -type f -name '*.c')
+TEST_OBJ:=$(TEST_SRC:$(TESTS_DIR)%.c=$(BUILD_DIR)tests/%.o)
 
 FLAGS+= -MT $@ -MMD -MP -MF $(dir $@).d/$(basename $(notdir $@)).d
 
@@ -58,13 +60,18 @@ clean:
 .PHONY: release debug profile test clean
 
 $(BIN): $(OBJ)
+	$(warning $(SRC))
+	$(warning $(OBJ))
 	$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $(BIN)
+	rm -f $(INTERMEDIATES)
 
 $(BIN_DEBUG): $(OBJ)
 	$(CC) $(FLAGS) $(OBJ) $(LIBS) -o $(BIN_DEBUG)
+	rm -f $(INTERMEDIATES)
 
 $(BIN_TEST): $(OBJ) $(TEST_OBJ)
 	$(CC) $(FLAGS) $(OBJ) $(TEST_OBJ) $(LIBS) -o $(BIN_TEST)
+	rm -f $(INTERMEDIATES)
 
 $(SRC_DIR)%.tab.c $(SRC_DIR)%.tab.h: $(SRC_DIR)%.y
 	bison --defines=$(SRC_DIR)$*.tab.h -o $(SRC_DIR)$*.tab.c $<
