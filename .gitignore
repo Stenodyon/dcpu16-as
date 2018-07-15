@@ -6,6 +6,7 @@ resources/
 *.yy.c
 *.tab.c
 *.tab.h
+*.bin
 gmon.out
 
 todo
