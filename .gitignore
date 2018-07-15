@@ -3,6 +3,9 @@ lib/
 resources/
 *.d
 *.o
+*.yy.c
+*.tab.c
+*.tab.h
 gmon.out
 
 todo
