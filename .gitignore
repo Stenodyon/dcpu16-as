@@ -1,0 +1,13 @@
+build/
+lib/
+resources/
+*.d
+*.o
+gmon.out
+
+todo
+compile_commands.json
+
+bdef
+bdef.debug
+bdef.test
