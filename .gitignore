@@ -8,6 +8,6 @@ gmon.out
 todo
 compile_commands.json
 
-bdef
-bdef.debug
-bdef.test
+dcpu16-as
+dcpu16-as.debug
+dcpu16-as.test
