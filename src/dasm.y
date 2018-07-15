@@ -12,16 +12,20 @@ extern FILE *yyin;
 void yyerror(const char *s);
 %}
 
+%define parse.error verbose
+
 %union {
     uint16_t ival;
     char * sval;
     operand_t* operand_val;
+    struct ast_statement* stmt_val;
+    ast_t* ast_val;
 }
 
 // Random
-%token NEWLINE
+%token NEWLINE END
 %token SQB_OPEN SQB_CLOSE
-%token PLUS
+%token PLUS COLON
 
 // Registers
 %token A B C X Y Z I J
@@ -41,10 +45,20 @@ void yyerror(const char *s);
 %type <operand_val> readable_operand;
 %type <operand_val> writable_operand;
 
+%type <stmt_val> instruction;
+%type <stmt_val> statement;
+
+%type <ast_val> dasm;
+
 %%
 
-dasm:
-    LABEL { printf("Label: '%s'\n", $1); fflush(stdout); }
+dasm: END { $$ = ast_make(); }
+    | NEWLINE dasm { $$ = $2; }
+    | statement NEWLINE dasm {
+        ast_t* ast = $3;
+        ast_append(ast, $1);
+        $$ = ast;
+    }
     ;
 
 register:
@@ -59,35 +73,47 @@ register:
         ;
 
 any_operand:  register { $$ = $1; }
-        | '[' register ']' {
+        | SQB_OPEN register SQB_CLOSE {
                     operand_t* reg = $2;
                     reg->id += 0x08;
                     $$ = reg;
                   }
-        | '[' register '+' VALUE ']' {
+        | SQB_OPEN register PLUS VALUE SQB_CLOSE {
                     operand_t * reg = $2;
                     reg->id += 0x10;
                     reg->nextword = $4;
                     $$ = reg;
                   }
-        | '[' SP ']' { $$ = ast_make_operand(0x19, 0); }
-        | '[' SP '+' VALUE ']' { $$ = ast_make_operand(0x1A, $4); }
+        | SQB_OPEN SP SQB_CLOSE { $$ = ast_make_operand(0x19, 0); }
+        | SQB_OPEN SP PLUS VALUE SQB_CLOSE { $$ = ast_make_operand(0x1A, $4); }
         | SP { $$ = ast_make_operand(0x1B, 0); }
         | PC { $$ = ast_make_operand(0x1C, 0); }
         | EX { $$ = ast_make_operand(0x1D, 0); }
-        | '[' VALUE ']' { $$ = ast_make_operand(0x1E, $2); }
+        | SQB_OPEN VALUE SQB_CLOSE { $$ = ast_make_operand(0x1E, $2); }
         | LABEL_NAME {
-            operant_t* operand = ast_make_operand(-1, 0); 
+            operand_t* operand = ast_make_operand(-1, 0); 
             operand->label_name = $1;
             $$ = operand;
         }
         ;
 
-readable_operand:
+readable_operand: any_operand { $$ = $1; }
+                | POP { $$ = ast_make_operand(0x18, 0); }
+                | VALUE { $$ = ast_make_operand(0x1F, $1); }
                 ;
 
-writable_operand:
+writable_operand: any_operand { $$ = $1; }
+                | PUSH { $$ = ast_make_operand(0x18, 0); }
                 ;
+
+instruction: SET writable_operand COLON readable_operand {
+            $$ = ast_makeSET($2, $4);
+           }
+           ;
+
+statement: instruction { $$ = $1; }
+         | LABEL { $$ = ast_make_label($1); }
+         ;
 
 %%
 

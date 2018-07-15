@@ -17,27 +17,32 @@ extern int yylex();
 
 %%
 
-[ \t]       {}
-\n          { return NEWLINE; }
-\[          { return SQB_OPEN; }
-\]          { return SQB_CLOSE; }
-\+          { return PLUS; }
-(0x)?[0-9]+ { yylval.ival = atoi(yytext); return VALUE; }
+[ \t]        { }
+\n           { return NEWLINE; }
+<<EOF>>      { return END; }
+\[           { return SQB_OPEN; }
+\]           { return SQB_CLOSE; }
+\+           { return PLUS; }
+,            { return COLON; }
+(0x)?[0-9]+  { yylval.ival = atoi(yytext); return VALUE; }
 
-A           { return A; }
-B           { return B; }
-C           { return C; }
-X           { return X; }
-Y           { return Y; }
-Z           { return Z; }
-I           { return I; }
-J           { return J; }
-PC          { return PC; }
-SP          { return SP; }
-EX          { return EX; }
-IA          { return IA; }
+A            { return A; }
+B            { return B; }
+C            { return C; }
+X            { return X; }
+Y            { return Y; }
+Z            { return Z; }
+I            { return I; }
+J            { return J; }
+PC           { return PC; }
+SP           { return SP; }
+EX           { return EX; }
+IA           { return IA; }
 
-(?i:SET)    { return SET; }
+PUSH         { return PUSH; }
+POP          { return POP; }
+
+(?i:SET)     { return SET; }
 
 [a-zA-Z_.][a-zA-Z0-9_.]* {
     yylval.sval = strdup(yytext);

@@ -32,11 +32,28 @@ struct ast_instr
 {
     int nodetype;
     int opcode;
-    operand_t* a, b;
+    operand_t *a, *b;
 };
 
-operand_t* ast_make_operand(int id, uint16_t nextword);
+struct ast_stmt_list
+{
+    int capacity;
+    int size;
+    struct ast_statement ** data;
+};
 
+typedef struct ast_stmt_list ast_t;
+
+operand_t* ast_make_operand(int id, uint16_t nextword);
+void ast_destroy_operand(operand_t * operand);
+
+struct ast_label* ast_make_label(char * label);
 struct ast_instr* ast_makeSET(operand_t* a, operand_t* b);
+void ast_destroy_stmt(struct ast_statement* stmt);
+
+ast_t* ast_make();
+struct ast_statement* ast_get(ast_t* ast, int index);
+void ast_append(ast_t* ast, struct ast_statement* stmt);
+void ast_destroy(ast_t* ast);
 
 #endif //AST_H_
