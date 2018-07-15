@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "assemble.h"
+#include "hashmap.h"
 
 bin_buffer_t* buffer_make()
 {
@@ -68,6 +69,28 @@ bin_buffer_t* assemble(ast_t* ast)
 {
     bin_buffer_t* buffer = buffer_make();
 
+    hashmap_t* label_map = hashmap_make();
+
+    uint16_t current_byte = 0;
+    for (int i = 0; i < ast->size; i++)
+    {
+        struct ast_statement* stmt = ast_get(ast, i);
+        if (stmt->nodetype == AST_INSTR)
+        {
+            current_byte++;
+            struct ast_instr* instr = (struct ast_instr*)stmt;
+            if (has_next_word(instr->a))
+                current_byte++;
+            if (has_next_word(instr->b))
+                current_byte++;
+        }
+        else if (stmt->nodetype == AST_LABEL)
+        {
+            struct ast_label* label = (struct ast_label*)stmt;
+            hashmap_insert(label_map, label->name, current_byte);
+        }
+    }
+
     for (int i = 0; i < ast->size; i++)
     {
         struct ast_statement* stmt = ast_get(ast, i);
@@ -82,6 +105,10 @@ bin_buffer_t* assemble(ast_t* ast)
                     instr->b->id,
                     assembled);
 #endif
+            if (instr->a->label_name)
+                instr->a->nextword = hashmap_lookup(label_map, instr->a->label_name);
+            if (instr->b->label_name)
+                instr->b->nextword = hashmap_lookup(label_map, instr->b->label_name);
             buffer_append(buffer, assembled);
             if (has_next_word(instr->a))
                 buffer_append(buffer, instr->a->nextword);
@@ -90,5 +117,6 @@ bin_buffer_t* assemble(ast_t* ast)
         }
     }
 
+    hashmap_destroy(label_map);
     return buffer;
 }
