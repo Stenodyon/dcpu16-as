@@ -26,6 +26,16 @@ struct ast_label* ast_make_label(char* name)
     return label;
 }
 
+struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b)
+{
+    struct ast_instr* instr = (struct ast_instr*)malloc(sizeof(struct ast_instr));
+    instr->nodetype = AST_INSTR;
+    instr->opcode = opcode;
+    instr->a = a;
+    instr->b = b;
+    return instr;
+}
+
 struct ast_instr* ast_makeSET(operand_t* a, operand_t* b)
 {
     struct ast_instr* set_instr = (struct ast_instr*)malloc(sizeof(struct ast_instr));

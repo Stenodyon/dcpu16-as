@@ -48,6 +48,7 @@ operand_t* ast_make_operand(int id, uint16_t nextword);
 void ast_destroy_operand(operand_t * operand);
 
 struct ast_label* ast_make_label(char * label);
+struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b);
 struct ast_instr* ast_makeSET(operand_t* a, operand_t* b);
 void ast_destroy_stmt(struct ast_statement* stmt);
 
