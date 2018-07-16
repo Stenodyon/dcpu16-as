@@ -65,14 +65,14 @@ void ast_destroy_operand(operand_t * operand);
 
 struct ast_label* ast_make_label(char * label);
 struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b);
-struct ast_dataw* ast_make_dataw();
+struct ast_dataw* ast_make_dataw(void);
 struct ast_datrs* ast_make_datrs(int size);
 void ast_destroy_stmt(struct ast_statement* stmt);
 
 void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value);
 void ast_dataw_addstr(struct ast_dataw *dataw, const char * str);
 
-ast_t* ast_make();
+ast_t* ast_make(void);
 struct ast_statement* ast_get(ast_t* ast, int index);
 void ast_append(ast_t* ast, struct ast_statement* stmt);
 void ast_destroy(ast_t* ast);

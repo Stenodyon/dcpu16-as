@@ -37,7 +37,7 @@ struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b)
     return instr;
 }
 
-struct ast_dataw* ast_make_dataw()
+struct ast_dataw* ast_make_dataw(void)
 {
     struct ast_dataw* dataw = (struct ast_dataw*)malloc(sizeof(struct ast_dataw));
     dataw->nodetype = AST_DATAW;
@@ -109,7 +109,7 @@ void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
     }
 }
 
-ast_t* ast_make()
+ast_t* ast_make(void)
 {
     ast_t* ast = (ast_t*)malloc(sizeof(ast_t));
     ast->capacity = 256;
