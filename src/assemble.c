@@ -66,6 +66,16 @@ uint16_t assemble_instr(struct ast_instr* instr)
     return field.value;
 }
 
+static int instr_size(struct ast_instr* instr)
+{
+    int size = 1;
+    if (instr->opcode != 0 && has_next_word(instr->b))
+        size++;
+    if (has_next_word(instr->a))
+        size++;
+    return size;
+}
+
 bin_buffer_t* assemble(ast_t* ast)
 {
     bin_buffer_t* buffer = buffer_make();
@@ -78,12 +88,8 @@ bin_buffer_t* assemble(ast_t* ast)
         struct ast_statement* stmt = ast_get(ast, i);
         if (stmt->nodetype == AST_INSTR)
         {
-            current_word++;
             struct ast_instr* instr = (struct ast_instr*)stmt;
-            if (has_next_word(instr->a))
-                current_word++;
-            if (has_next_word(instr->b))
-                current_word++;
+            current_word += instr_size(instr);
         }
         else if (stmt->nodetype == AST_LABEL)
         {
@@ -146,7 +152,7 @@ bin_buffer_t* assemble(ast_t* ast)
                 if (verbose)
                     printf(" %04x", instr->a->nextword);
             }
-            if (has_next_word(instr->b))
+            if (instr->opcode != 0 && has_next_word(instr->b))
             {
                 buffer_append(buffer, instr->b->nextword);
                 if (verbose)
