@@ -10,6 +10,7 @@
 #endif
 
 //extern YYLTYPE yylloc;
+extern int yylineno;
 extern int yylex();
 extern int yyparse(ast_t** _result);
 extern FILE *yyin;
@@ -19,6 +20,7 @@ void yyerror(ast_t ** _result, const char *s);
 
 %define parse.error verbose
 %parse-param {ast_t** _result}
+%locations
 
 %union {
     uint16_t ival;
@@ -221,7 +223,7 @@ statement: instruction { $$ = $1; }
 void yyerror(ast_t ** _result, const char * s)
 {
     (void)_result;
-    fprintf(stderr, "Parse error: %s\n", s);
+    fprintf(stderr, "line %d:parse error: %s\n", yylineno, s);
     //printf("Line %i, parse error: %s\n", yylloc.first_line, s);
     exit(-1);
 }
