@@ -11,6 +11,7 @@ extern int yyparse(ast_t** _result);
 
 void write_binary(char * filename, bin_buffer_t* buffer);
 
+#ifndef _TESTING
 int main(int argc, char ** argv)
 {
     ast_t* result = NULL;
@@ -46,6 +47,7 @@ int main(int argc, char ** argv)
 
     buffer_destroy(buffer);
 }
+#endif
 
 void write_binary(char * filename, bin_buffer_t* buffer)
 {

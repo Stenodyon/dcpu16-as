@@ -7,7 +7,7 @@
 
 typedef struct entry
 {
-    char * name;
+    const char * name;
     uint16_t location;
 } entry_t;
 
@@ -26,8 +26,8 @@ typedef struct hashmap
 } hashmap_t;
 
 hashmap_t* hashmap_make();
-void hashmap_insert(hashmap_t* hashmap, char * name, uint16_t location);
-uint16_t hashmap_lookup(hashmap_t* hashmap, char * name);
+void hashmap_insert(hashmap_t* hashmap, const char * name, uint16_t location);
+int hashmap_lookup(hashmap_t* hashmap, const char * name);
 void hashmap_destroy(hashmap_t* hashmap);
 
 #endif //HASHMAP_H_

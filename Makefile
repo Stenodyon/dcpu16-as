@@ -5,8 +5,9 @@ BUILD_DIR=build/
 TESTS_DIR=tests/
 
 FLAGS=-std=c11 -Wall -Wextra -Wno-sign-compare \
-      -I./lib/ -I./include/
-LIBS=-lncurses
+      -I./lib/ -I./include/ \
+      `pkg-config --cflags check`
+LIBS=-lncurses `pkg-config --libs check`
 
 CXX=g++-7.3
 CC=gcc
@@ -47,6 +48,7 @@ profile: FLAGS+= -pg
 profile: debug
 
 test: FLAGS+= -g -D _TESTING -I./lib/catch/
+test: LIBS+= -lcheck -lm -lrt
 test: $(BIN_TEST)
 	./$(BIN_TEST)
 

@@ -3,6 +3,56 @@
 
 #include "hashmap.h"
 
+static bucket_t* bucket_make()
+{
+    bucket_t* bucket = (bucket_t*)malloc(sizeof(bucket_t));
+    bucket->capacity = 1;
+    bucket->size = 0;
+    bucket->entries = (entry_t*)malloc(1 * sizeof(entry_t));
+    return bucket;
+}
+
+static void bucket_insert(bucket_t* bucket, const char * name, uint16_t location)
+{
+    for (int i = 0; i < bucket->size; i++)
+    {
+        entry_t* entry = &(bucket->entries[i]);
+        if (strcmp(name, entry->name) == 0)
+        {
+            entry->location = location;
+            return;
+        }
+    }
+
+    if (bucket->size == bucket->capacity)
+    {
+        bucket->entries = (entry_t*)realloc(bucket->entries,
+                bucket->capacity * 2 * sizeof(entry_t));
+        bucket->capacity *= 2;
+    }
+    entry_t * entry = &(bucket->entries[bucket->size++]);
+    entry->name = name;
+    entry->location = location;
+}
+
+static
+int bucket_find(bucket_t* bucket, const char * name)
+{
+    for (int i = 0; i < bucket->size; i++)
+    {
+        entry_t* entry = &(bucket->entries[i]);
+        if (strcmp(name, entry->name) == 0)
+            return entry->location;
+    }
+    return -1;
+}
+
+static void bucket_destroy(bucket_t* bucket)
+{
+    free(bucket->entries);
+    free(bucket);
+}
+
 static hashmap_t* hashmap_make_n(int capacity)
 {
     hashmap_t* hashmap = (hashmap_t*)malloc(sizeof(hashmap_t));
@@ -43,57 +93,8 @@ static void hashmap_expand(hashmap_t* hashmap)
     hashmap_destroy(temp_hashmap);
 }
 
-static bucket_t* bucket_make()
-{
-    bucket_t* bucket = (bucket_t*)malloc(sizeof(bucket_t));
-    bucket->capacity = 1;
-    bucket->size = 0;
-    bucket->entries = (entry_t*)malloc(1 * sizeof(entry_t));
-    return bucket;
-}
-
-static void bucket_insert(bucket_t* bucket, char * name, uint16_t location)
-{
-    for (int i = 0; i < bucket->size; i++)
-    {
-        entry_t* entry = &(bucket->entries[i]);
-        if (strcmp(name, entry->name) == 0)
-        {
-            entry->location = location;
-            return;
-        }
-    }
-
-    if (bucket->size == bucket->capacity)
-    {
-        bucket->entries = (entry_t*)realloc(bucket->entries,
-                bucket->capacity * 2 * sizeof(entry_t));
-        bucket->capacity *= 2;
-    }
-    entry_t * entry = &(bucket->entries[bucket->size++]);
-    entry->name = name;
-    entry->location = location;
-}
-
-static uint16_t bucket_find(bucket_t* bucket, char * name)
-{
-    for (int i = 0; i < bucket->size; i++)
-    {
-        entry_t* entry = &(bucket->entries[i]);
-        if (strcmp(name, entry->name) == 0)
-            return entry->location;
-    }
-    return 0;
-}
-
-static void bucket_destroy(bucket_t* bucket)
-{
-    free(bucket->entries);
-    free(bucket);
-}
-
 // djb2 by Dan Bernstein
-static unsigned long hash(unsigned char * str)
+static unsigned long hash(const unsigned char * str)
 {
     unsigned long hash = 5381;
     int c;
@@ -104,12 +105,13 @@ static unsigned long hash(unsigned char * str)
     return hash;
 }
 
-static unsigned long hashmap_index(hashmap_t* hashmap, char * name)
+static inline
+unsigned long hashmap_index(hashmap_t* hashmap, const char * name)
 {
     return hash(name) % hashmap->capacity;
 }
 
-void hashmap_insert(hashmap_t* hashmap, char * name, uint16_t location)
+void hashmap_insert(hashmap_t* hashmap, const char * name, uint16_t location)
 {
     if (hashmap->size >= hashmap->capacity * 2 / 3)
         hashmap_expand(hashmap);
@@ -123,10 +125,12 @@ void hashmap_insert(hashmap_t* hashmap, char * name, uint16_t location)
     bucket_insert(bucket, name, location);
 }
 
-uint16_t hashmap_lookup(hashmap_t* hashmap, char* name)
+int hashmap_lookup(hashmap_t* hashmap, const char* name)
 {
     unsigned long index = hashmap_index(hashmap, name);
     bucket_t* bucket = hashmap->buckets[index];
+    if (bucket == NULL)
+        return -1;
     return bucket_find(bucket, name);
 }
 
