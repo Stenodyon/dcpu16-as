@@ -148,7 +148,7 @@ bin_buffer_t* assemble(ast_t* ast)
             }
             if (has_next_word(instr->b))
             {
-                buffer_append(buffer, instr->a->nextword);
+                buffer_append(buffer, instr->b->nextword);
                 if (verbose)
                     printf(" %04x", instr->b->nextword);
             }
