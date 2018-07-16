@@ -56,6 +56,7 @@ void yyerror(ast_t ** _result, const char *s);
 %token <ival> VALUE;
 %token <sval> LABEL;
 %token <sval> LABEL_NAME;
+%token <sval> STRING_LIT;
 
 %type <operand_val> register;
 %type <operand_val> any_operand;

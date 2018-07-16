@@ -15,13 +15,20 @@ extern int yylex();
 
 %option noyywrap yylineno
 
-%x COMMENT
+%x COMMENT STRING
 
 %%
 
 ;              BEGIN(COMMENT);
 <COMMENT>[^\n] { }
 <COMMENT>\n    { BEGIN(0); return NEWLINE; }
+
+\"             BEGIN(STRING);
+<STRING>[^\"]  {
+    yylval.sval = strdup(yytext);
+    return STRING_LIT;
+}
+<STRING>\"     BEGIN(0);
 
 [ \t]          { }
 \n             { return NEWLINE; }
