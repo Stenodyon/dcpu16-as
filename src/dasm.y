@@ -27,6 +27,7 @@ void yyerror(ast_t ** _result, const char *s);
     char * sval;
     operand_t* operand_val;
     struct ast_statement* stmt_val;
+    struct ast_dataw* data_list_val;
     ast_t* ast_val;
 }
 
@@ -68,6 +69,8 @@ void yyerror(ast_t ** _result, const char *s);
 %type <operand_val> unopcode_w;
 %type <operand_val> unopcode_r;
 %type <operand_val> monopcode;
+
+%type <data_list_val> data_list;
 
 %type <stmt_val> instruction;
 %type <stmt_val> statement;
@@ -213,10 +216,34 @@ instruction: bin_opcode writable_operand COLON readable_operand {
             $$ = (struct ast_statement*)ast_make_instr(0, $1, empty); }
            ;
 
-statement: instruction { $$ = $1; }
-         | LABEL { $$ = (struct ast_statement*)ast_make_label($1); }
-         | DAT VALUE { $$ = (struct ast_statement*)ast_make_dataw($2); }
-         | RES VALUE { $$ = (struct ast_statement*)ast_make_datrs($2); }
+data_list: VALUE {
+            struct ast_dataw* dataw = ast_make_dataw();
+            ast_dataw_addint(dataw, $1);
+            $$ = dataw;
+         }
+         | STRING_LIT {
+            struct ast_dataw* dataw = ast_make_dataw();
+            ast_dataw_addstr(dataw, $1);
+            free($1);
+            $$ = dataw;
+         }
+         | data_list COLON VALUE {
+            struct ast_dataw* dataw = $$;
+            ast_dataw_addint(dataw, $3);
+            $$ = dataw;
+         }
+         | data_list COLON STRING_LIT {
+            struct ast_dataw* dataw = $$;
+            ast_dataw_addstr(dataw, $3);
+            free($1);
+            $$ = dataw;
+         }
+         ;
+
+statement: instruction   { $$ = $1; }
+         | LABEL         { $$ = (struct ast_statement*)ast_make_label($1); }
+         | DAT data_list { $$ = (struct ast_statement*)$2; }
+         | RES VALUE     { $$ = (struct ast_statement*)ast_make_datrs($2); }
          ;
 
 %%
@@ -224,7 +251,6 @@ statement: instruction { $$ = $1; }
 void yyerror(ast_t ** _result, const char * s)
 {
     (void)_result;
-    fprintf(stderr, "line %d:parse error: %s\n", yylineno, s);
-    //printf("Line %i, parse error: %s\n", yylloc.first_line, s);
+    fprintf(stderr, "line %d: parse error: %s\n", yylineno, s);
     exit(-1);
 }

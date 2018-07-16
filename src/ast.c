@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "ast.h"
 
@@ -36,11 +37,13 @@ struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b)
     return instr;
 }
 
-struct ast_dataw* ast_make_dataw(uint16_t value)
+struct ast_dataw* ast_make_dataw()
 {
     struct ast_dataw* dataw = (struct ast_dataw*)malloc(sizeof(struct ast_dataw));
     dataw->nodetype = AST_DATAW;
-    dataw->value = value;
+    dataw->capacity = 16;
+    dataw->size = 0;
+    dataw->data = (uint16_t*)malloc(16 * sizeof(uint16_t));
     return dataw;
 }
 
@@ -69,11 +72,40 @@ void ast_destroy_stmt(struct ast_statement* stmt)
     }
     else if (stmt->nodetype == AST_DATAW)
     {
-        free(stmt);
+        struct ast_dataw* dataw = (struct ast_dataw*)stmt;
+        free(dataw->data);
+        free(dataw);
     }
     else if (stmt->nodetype == AST_DATRS)
     {
         free(stmt);
+    }
+}
+
+static
+void ast_dataw_insert(struct ast_dataw *dataw, uint16_t value)
+{
+    if (dataw->size == dataw->capacity)
+    {
+        dataw->data = (uint16_t*)realloc(dataw->data,
+                dataw->capacity * 2 * sizeof(uint16_t));
+        dataw->capacity *= 2;
+    }
+    dataw->data[dataw->size++] = value;
+}
+
+void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value)
+{
+    ast_dataw_insert(dataw, value);
+}
+
+void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
+{
+    int length = strlen(str);
+    for (int i = 0; i < length; i++)
+    {
+        uint16_t c = (uint16_t)str[i];
+        ast_dataw_insert(dataw, c);
     }
 }
 

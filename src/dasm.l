@@ -24,7 +24,7 @@ extern int yylex();
 <COMMENT>\n    { BEGIN(0); return NEWLINE; }
 
 \"             BEGIN(STRING);
-<STRING>[^\"]  {
+<STRING>[^\"]* {
     yylval.sval = strdup(yytext);
     return STRING_LIT;
 }
