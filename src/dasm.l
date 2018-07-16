@@ -19,7 +19,7 @@ extern int yylex();
 
 %%
 
-;            BEGIN(COMMENT);
+;              BEGIN(COMMENT);
 <COMMENT>[^\n] { }
 <COMMENT>\n    { BEGIN(0); return NEWLINE; }
 
@@ -30,7 +30,7 @@ extern int yylex();
 \+             { return PLUS; }
 ,              { return COLON; }
 [0-9]+         { yylval.ival = strtol(yytext, NULL, 10); return VALUE; }
-0x[0-9]+       { yylval.ival = strtol(yytext, NULL, 16); return VALUE; }
+0x[0-9a-fA-F]+ { yylval.ival = strtol(yytext, NULL, 16); return VALUE; }
 
 A              { return A; }
 B              { return B; }
