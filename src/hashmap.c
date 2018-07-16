@@ -108,7 +108,7 @@ static unsigned long hash(const unsigned char * str)
 static inline
 unsigned long hashmap_index(hashmap_t* hashmap, const char * name)
 {
-    return hash(name) % hashmap->capacity;
+    return hash((const unsigned char *)name) % hashmap->capacity;
 }
 
 void hashmap_insert(hashmap_t* hashmap, const char * name, uint16_t location)

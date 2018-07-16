@@ -21,8 +21,8 @@ static char args_doc[] =
 
 static struct argp_option options[] =
 {
-    {"verbose", 'v', 0, 0, "Verbose output"},
-    {"output", 'o', "FILE", 0, "Output to FILE instead of out.bin"},
+    {"verbose", 'v', 0, 0, "Verbose output", 0},
+    {"output", 'o', "FILE", 0, "Output to FILE instead of out.bin", 0},
     { 0 }
 };
 
@@ -38,7 +38,7 @@ struct arguments
 static error_t parse_opt(int key, char *arg, struct argp_state *state);
 void write_binary(const char * filename, bin_buffer_t* buffer);
 
-static struct argp argp = { options, parse_opt, args_doc, doc };
+static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 
 #ifndef _TESTING
 int main(int argc, char ** argv)
