@@ -64,6 +64,7 @@ void yyerror(ast_t ** _result, const char *s);
 %type <ival> test_opcode;
 %type <operand_val> unopcode_w;
 %type <operand_val> unopcode_r;
+%type <operand_val> monopcode;
 
 %type <stmt_val> instruction;
 %type <stmt_val> statement;
@@ -190,7 +191,11 @@ unopcode_r: JSR { $$ = ast_make_operand(0x01, 0); }
           | IAQ { $$ = ast_make_operand(0x0C, 0); }
           | HWQ { $$ = ast_make_operand(0x11, 0); }
           | HWI { $$ = ast_make_operand(0x12, 0); }
+          | DBP { $$ = ast_make_operand(0x1F, 0); }
           ;
+
+monopcode: DBH { $$ = ast_make_operand(0x00, 0); }
+         ;
 
 instruction: bin_opcode writable_operand COLON readable_operand {
             $$ = (struct ast_statement*)ast_make_instr($1, $4, $2); }
@@ -200,6 +205,9 @@ instruction: bin_opcode writable_operand COLON readable_operand {
             $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
            | unopcode_r readable_operand {
             $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
+           | monopcode {
+            operand_t *empty = ast_make_operand(0, 0);
+            $$ = (struct ast_statement*)ast_make_instr(0, $1, empty); }
            ;
 
 statement: instruction { $$ = $1; }
