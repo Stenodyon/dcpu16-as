@@ -115,9 +115,25 @@ bin_buffer_t* assemble(ast_t* ast)
                     assembled);
 #endif
             if (instr->a->label_name)
-                instr->a->nextword = hashmap_lookup(label_map, instr->a->label_name);
+            {
+                int label_location = hashmap_lookup(label_map, instr->a->label_name);
+                if (label_location == -1)
+                {
+                    fprintf(stderr, "Unknown label '%s'\n", instr->a->label_name);
+                    exit(-1);
+                }
+                instr->a->nextword = label_location;
+            }
             if (instr->b->label_name)
-                instr->b->nextword = hashmap_lookup(label_map, instr->b->label_name);
+            {
+                int label_location = hashmap_lookup(label_map, instr->b->label_name);
+                if (label_location == -1)
+                {
+                    fprintf(stderr, "Unknown label '%s'\n", instr->b->label_name);
+                    exit(-1);
+                }
+                instr->b->nextword = label_location;
+            }
             buffer_append(buffer, assembled);
             if (has_next_word(instr->a))
                 buffer_append(buffer, instr->a->nextword);
