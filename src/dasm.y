@@ -199,6 +199,7 @@ instruction: bin_opcode writable_operand COLON readable_operand {
 statement: instruction { $$ = $1; }
          | LABEL { $$ = (struct ast_statement*)ast_make_label($1); }
          | DAT VALUE { $$ = (struct ast_statement*)ast_make_dataw($2); }
+         | RES VALUE { $$ = (struct ast_statement*)ast_make_datrs($2); }
          ;
 
 %%

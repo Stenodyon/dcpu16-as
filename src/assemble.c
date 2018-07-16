@@ -93,6 +93,11 @@ bin_buffer_t* assemble(ast_t* ast)
         {
             current_word++;
         }
+        else if (stmt->nodetype == AST_DATRS)
+        {
+            struct ast_datrs* datrs = (struct ast_datrs*)stmt;
+            current_word += datrs->size;
+        }
     }
 
     for (int i = 0; i < ast->size; i++)
@@ -123,6 +128,12 @@ bin_buffer_t* assemble(ast_t* ast)
         {
             struct ast_dataw* dataw = (struct ast_dataw*)stmt;
             buffer_append(buffer, dataw->value);
+        }
+        else if (stmt->nodetype == AST_DATRS)
+        {
+            struct ast_datrs* datrs = (struct ast_datrs*)stmt;
+            for (int i = 0; i < datrs->size; i++)
+                buffer_append(buffer, 0x0000);
         }
     }
 

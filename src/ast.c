@@ -44,6 +44,14 @@ struct ast_dataw* ast_make_dataw(uint16_t value)
     return dataw;
 }
 
+struct ast_datrs* ast_make_datrs(int size)
+{
+    struct ast_datrs* datrs = (struct ast_datrs*)malloc(sizeof(struct ast_datrs));
+    datrs->nodetype = AST_DATRS;
+    datrs->size = size;
+    return datrs;
+}
+
 void ast_destroy_stmt(struct ast_statement* stmt)
 {
     if (stmt->nodetype == AST_LABEL)
@@ -60,6 +68,10 @@ void ast_destroy_stmt(struct ast_statement* stmt)
         free(instr);
     }
     else if (stmt->nodetype == AST_DATAW)
+    {
+        free(stmt);
+    }
+    else if (stmt->nodetype == AST_DATRS)
     {
         free(stmt);
     }
