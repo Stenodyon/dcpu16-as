@@ -220,6 +220,7 @@ statement: instruction { $$ = $1; }
 
 void yyerror(ast_t ** _result, const char * s)
 {
+    (void)_result;
     fprintf(stderr, "Parse error: %s\n", s);
     //printf("Line %i, parse error: %s\n", yylloc.first_line, s);
     exit(-1);
