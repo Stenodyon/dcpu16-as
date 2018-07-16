@@ -115,6 +115,12 @@ any_operand:  register { $$ = $1; }
                     reg->nextword = $4;
                     $$ = reg;
                   }
+        | SQB_OPEN VALUE PLUS register SQB_CLOSE {
+                    operand_t * reg = $4;
+                    reg->id += 0x10;
+                    reg->nextword = $2;
+                    $$ = reg;
+                  }
         | SQB_OPEN SP SQB_CLOSE { $$ = ast_make_operand(0x19, 0); }
         | SQB_OPEN SP PLUS VALUE SQB_CLOSE { $$ = ast_make_operand(0x1A, $4); }
         | SP { $$ = ast_make_operand(0x1B, 0); }
