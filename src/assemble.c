@@ -71,23 +71,27 @@ bin_buffer_t* assemble(ast_t* ast)
 
     hashmap_t* label_map = hashmap_make();
 
-    uint16_t current_byte = 0;
+    uint16_t current_word = 0;
     for (int i = 0; i < ast->size; i++)
     {
         struct ast_statement* stmt = ast_get(ast, i);
         if (stmt->nodetype == AST_INSTR)
         {
-            current_byte++;
+            current_word++;
             struct ast_instr* instr = (struct ast_instr*)stmt;
             if (has_next_word(instr->a))
-                current_byte++;
+                current_word++;
             if (has_next_word(instr->b))
-                current_byte++;
+                current_word++;
         }
         else if (stmt->nodetype == AST_LABEL)
         {
             struct ast_label* label = (struct ast_label*)stmt;
-            hashmap_insert(label_map, label->name, current_byte);
+            hashmap_insert(label_map, label->name, current_word);
+        }
+        else if (stmt->nodetype == AST_DATAW)
+        {
+            current_word++;
         }
     }
 
@@ -114,6 +118,11 @@ bin_buffer_t* assemble(ast_t* ast)
                 buffer_append(buffer, instr->a->nextword);
             if (has_next_word(instr->b))
                 buffer_append(buffer, instr->a->nextword);
+        }
+        else if (stmt->nodetype == AST_DATAW)
+        {
+            struct ast_dataw* dataw = (struct ast_dataw*)stmt;
+            buffer_append(buffer, dataw->value);
         }
     }
 

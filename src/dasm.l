@@ -96,6 +96,9 @@ POP            { return POP; }
 (?i:DBP)       { return DBP; }
 (?i:DBH)       { return DBH; }
 
+(?i:DAT)       { return DAT; }
+(?i:RES)       { return RES; }
+
 [a-zA-Z_.][a-zA-Z0-9_.]* {
     yylval.sval = strdup(yytext);
     return LABEL_NAME;

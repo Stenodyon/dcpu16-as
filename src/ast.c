@@ -36,14 +36,12 @@ struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b)
     return instr;
 }
 
-struct ast_instr* ast_makeSET(operand_t* a, operand_t* b)
+struct ast_dataw* ast_make_dataw(uint16_t value)
 {
-    struct ast_instr* set_instr = (struct ast_instr*)malloc(sizeof(struct ast_instr));
-    set_instr->nodetype = AST_INSTR;
-    set_instr->opcode = 0x01;
-    set_instr->a = a;
-    set_instr->b = b;
-    return set_instr;
+    struct ast_dataw* dataw = (struct ast_dataw*)malloc(sizeof(struct ast_dataw));
+    dataw->nodetype = AST_DATAW;
+    dataw->value = value;
+    return dataw;
 }
 
 void ast_destroy_stmt(struct ast_statement* stmt)
@@ -60,6 +58,10 @@ void ast_destroy_stmt(struct ast_statement* stmt)
         ast_destroy_operand(instr->a);
         ast_destroy_operand(instr->b);
         free(instr);
+    }
+    else if (stmt->nodetype == AST_DATAW)
+    {
+        free(stmt);
     }
 }
 

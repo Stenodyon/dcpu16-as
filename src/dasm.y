@@ -48,6 +48,8 @@ void yyerror(ast_t ** _result, const char *s);
 %token HWN HWQ HWI
 %token DBP DBH
 
+%token DAT RES
+
 // Values
 %token <ival> VALUE;
 %token <sval> LABEL;
@@ -196,6 +198,7 @@ instruction: bin_opcode writable_operand COLON readable_operand {
 
 statement: instruction { $$ = $1; }
          | LABEL { $$ = (struct ast_statement*)ast_make_label($1); }
+         | DAT VALUE { $$ = (struct ast_statement*)ast_make_dataw($2); }
          ;
 
 %%

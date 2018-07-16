@@ -16,6 +16,7 @@ typedef struct ast_operand operand_t;
 
 #define AST_LABEL 1
 #define AST_INSTR 2
+#define AST_DATAW 3
 
 struct ast_statement
 {
@@ -35,6 +36,12 @@ struct ast_instr
     operand_t *a, *b;
 };
 
+struct ast_dataw
+{
+    int nodetype;
+    uint16_t value;
+};
+
 struct ast_stmt_list
 {
     int capacity;
@@ -49,7 +56,7 @@ void ast_destroy_operand(operand_t * operand);
 
 struct ast_label* ast_make_label(char * label);
 struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b);
-struct ast_instr* ast_makeSET(operand_t* a, operand_t* b);
+struct ast_dataw* ast_make_dataw(uint16_t value);
 void ast_destroy_stmt(struct ast_statement* stmt);
 
 ast_t* ast_make();
