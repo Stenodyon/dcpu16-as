@@ -3,6 +3,7 @@
 
 #include "assemble.h"
 #include "hashmap.h"
+#include "config.h"
 
 bin_buffer_t* buffer_make()
 {
@@ -88,6 +89,8 @@ bin_buffer_t* assemble(ast_t* ast)
         {
             struct ast_label* label = (struct ast_label*)stmt;
             hashmap_insert(label_map, label->name, current_word);
+            if (verbose)
+                printf("label '%s' -> %04x\n", label->name, current_word);
         }
         else if (stmt->nodetype == AST_DATAW)
         {
@@ -135,10 +138,22 @@ bin_buffer_t* assemble(ast_t* ast)
                 instr->b->nextword = label_location;
             }
             buffer_append(buffer, assembled);
+            if (verbose)
+                printf("%04x: %04x", buffer->size - 1, assembled);
             if (has_next_word(instr->a))
+            {
                 buffer_append(buffer, instr->a->nextword);
+                if (verbose)
+                    printf(" %04x", instr->a->nextword);
+            }
             if (has_next_word(instr->b))
+            {
                 buffer_append(buffer, instr->a->nextword);
+                if (verbose)
+                    printf(" %04x", instr->b->nextword);
+            }
+            if (verbose)
+                printf("\n");
         }
         else if (stmt->nodetype == AST_DATAW)
         {

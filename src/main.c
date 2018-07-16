@@ -21,13 +21,17 @@ static char args_doc[] =
 
 static struct argp_option options[] =
 {
+    {"verbose", 'v', 0, 0, "Verbose output"},
     {"output", 'o', "FILE", 0, "Output to FILE instead of out.bin"},
     { 0 }
 };
 
+int verbose;
+
 struct arguments
 {
     char *input_file;
+    int verbosity;
     char *output_file;
 };
 
@@ -41,7 +45,10 @@ int main(int argc, char ** argv)
 {
     struct arguments arguments;
     arguments.output_file = "out.bin";
+    arguments.verbosity = 0;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
+    verbose = arguments.verbosity;
 
     ast_t* result = NULL;
 
@@ -77,6 +84,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
     struct arguments *arguments = state->input;
     switch (key)
     {
+    case 'v':
+        arguments->verbosity = 1;
+        break;
     case 'o':
         arguments->output_file = arg;
         break;
