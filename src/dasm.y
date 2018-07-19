@@ -75,24 +75,26 @@ void yyerror(ast_t ** _result, const char *s);
 %type <stmt_val> instruction;
 %type <stmt_val> statement;
 
-%type <ast_val> dasm;
+//%type <ast_val> dasm;
 
 %%
 
-program: dasm { *_result = $1; };
+program: dasm {
+        };
 
-dasm: %empty { $$ = ast_make(); }
+dasm: %empty {
+        if (*_result == NULL)
+            *_result = ast_make();
+    }
     | statement {
-        ast_t* ast = ast_make();
-        ast_append(ast, $1);
-        $$ = ast;
+        if (*_result == NULL)
+            *_result = ast_make();
+        ast_append(*_result, $1);
     }
     | dasm newlines statement {
-        ast_t* ast = $1;
-        ast_append(ast, $3);
-        $$ = ast;
+        ast_append(*_result, $3);
     }
-    | dasm newlines { $$ = $1; }
+    | dasm newlines {}
     ;
 
 newlines: NEWLINE

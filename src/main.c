@@ -5,6 +5,7 @@
 
 #include "ast.h"
 #include "assemble.h"
+#include "strlist.h"
 
 extern int yydebug;
 extern FILE* yyin;
@@ -17,7 +18,7 @@ static char doc[] =
     "DCPU16 specification 1.7 assembler";
 
 static char args_doc[] =
-    "DASM_FILE";
+    "DASM_FILES...";
 
 static struct argp_option options[] =
 {
@@ -30,7 +31,7 @@ int verbose;
 
 struct arguments
 {
-    char *input_file;
+    strlist_t *input_files;
     int verbosity;
     char *output_file;
 };
@@ -44,6 +45,7 @@ static struct argp argp = { options, parse_opt, args_doc, doc, 0, 0, 0 };
 int main(int argc, char ** argv)
 {
     struct arguments arguments;
+    arguments.input_files = strlist_make();
     arguments.output_file = "out.bin";
     arguments.verbosity = 0;
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -56,16 +58,19 @@ int main(int argc, char ** argv)
     yydebug = 1;
 #endif
 
-    yyin = fopen(arguments.input_file, "r");
-
-    if (yyin == NULL)
+    for (int i = 0; i < arguments.input_files->size; i++)
     {
-        perror(argv[1]);
-        exit(-1);
+        yyin = fopen(arguments.input_files->entries[i], "r");
+        if (yyin == NULL)
+        {
+            fprintf(stderr, "%s:%i Error: ", __FILE__, __LINE__);
+            perror(argv[1]);
+            exit(-1);
+        }
+        yyparse(&result);
+        fclose(yyin);
     }
-
-    yyparse(&result);
-    fclose(yyin);
+    strlist_destroy(arguments.input_files);
 
     if (!result)
         exit(-1);
@@ -91,9 +96,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state)
         arguments->output_file = arg;
         break;
     case ARGP_KEY_ARG:
-        if (state->arg_num >= 1)
-            argp_usage(state);
-        arguments->input_file = arg;
+        strlist_insert(arguments->input_files, arg);
         break;
     case ARGP_KEY_END:
         if (state->arg_num < 1)
