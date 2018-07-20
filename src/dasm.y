@@ -19,6 +19,7 @@ void yyerror(ast_t ** _result, const char *s);
 %}
 
 %define parse.error verbose
+%define parse.lac full
 %parse-param {ast_t** _result}
 %locations
 
