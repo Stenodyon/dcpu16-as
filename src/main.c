@@ -76,6 +76,11 @@ int main(int argc, char ** argv)
         exit(-1);
 
     bin_buffer_t* buffer = assemble(result);
+    if (buffer->size >= 0x10000)
+        fprintf(stderr,
+                "Warning: the binary is over the 64kB limit by %i bytes\n",
+                (buffer->size - 0x10000));
+
     ast_destroy(result);
 
     write_binary(arguments.output_file, buffer);
