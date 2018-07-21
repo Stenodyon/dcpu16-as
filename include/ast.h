@@ -37,12 +37,18 @@ struct ast_instr
     operand_t *a, *b;
 };
 
+struct ast_dataw_val
+{
+    int is_string;
+    void *value;
+};
+
 struct ast_dataw
 {
     int nodetype;
     int capacity;
     int size;
-    uint16_t * data;
+    struct ast_dataw_val *data;
 };
 
 struct ast_datrs

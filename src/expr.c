@@ -49,7 +49,7 @@ void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
             exit(-1);
         }
         expr_destroy(*expr);
-        *expr = expr_int_make(location);
+        *expr = (expr_t*)expr_int_make(location);
     }
     break;
     case EXPR_ADD:
@@ -74,7 +74,7 @@ void expr_eval_current(expr_t **expr, int current_byte)
     {
     case EXPR_CURRENT:
         expr_destroy(*expr);
-        *expr = expr_int_make(current_byte);
+        *expr = (expr_t*)expr_int_make(current_byte);
         break;
     case EXPR_ADD:
     case EXPR_SUB:

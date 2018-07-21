@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "ast.h"
+#include "expr.h"
 
 operand_t * ast_make_operand(int id, uint16_t nextword)
 {
@@ -43,7 +44,7 @@ struct ast_dataw* ast_make_dataw(void)
     dataw->nodetype = AST_DATAW;
     dataw->capacity = 16;
     dataw->size = 0;
-    dataw->data = (uint16_t*)malloc(16 * sizeof(uint16_t));
+    dataw->data = (uint16_t*)malloc(16 * sizeof(struct ast_dataw_val));
     return dataw;
 }
 
@@ -73,6 +74,14 @@ void ast_destroy_stmt(struct ast_statement* stmt)
     else if (stmt->nodetype == AST_DATAW)
     {
         struct ast_dataw* dataw = (struct ast_dataw*)stmt;
+        for (int i = 0; i < dataw->size; i++)
+        {
+            struct ast_dataw_val *dataval = &(dataw->data[i]);
+            if (dataval->is_string)
+                free((char *)(dataval->value));
+            else
+                expr_destroy((expr_t*)(dataval->value));
+        }
         free(dataw->data);
         free(dataw);
     }
@@ -83,30 +92,31 @@ void ast_destroy_stmt(struct ast_statement* stmt)
 }
 
 static
-void ast_dataw_insert(struct ast_dataw *dataw, uint16_t value)
+void ast_dataw_insert(struct ast_dataw *dataw, struct ast_dataw_val *value)
 {
     if (dataw->size == dataw->capacity)
     {
-        dataw->data = (uint16_t*)realloc(dataw->data,
-                dataw->capacity * 2 * sizeof(uint16_t));
+        dataw->data = (struct ast_dataw_val*)realloc(dataw->data,
+                dataw->capacity * 2 * sizeof(struct ast_dataw_val));
         dataw->capacity *= 2;
     }
-    dataw->data[dataw->size++] = value;
+    dataw->data[dataw->size++] = *value;
 }
 
 void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value)
 {
-    ast_dataw_insert(dataw, value);
+    struct ast_dataw_val intval;
+    intval.is_string = 0;
+    intval.value = (void*)expr_int_make(value);
+    ast_dataw_insert(dataw, &intval);
 }
 
 void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
 {
-    int length = strlen(str);
-    for (int i = 0; i < length; i++)
-    {
-        uint16_t c = (uint16_t)str[i];
-        ast_dataw_insert(dataw, c);
-    }
+    struct ast_dataw_val strval;
+    strval.is_string = 1;
+    strval.value = (void*)str;
+    ast_dataw_insert(dataw, &strval);
 }
 
 ast_t* ast_make(void)

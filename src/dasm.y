@@ -227,7 +227,6 @@ data_list: VALUE {
          | STRING_LIT {
             struct ast_dataw* dataw = ast_make_dataw();
             ast_dataw_addstr(dataw, $1);
-            free($1);
             $$ = dataw;
          }
          | data_list COLON VALUE {
@@ -238,7 +237,6 @@ data_list: VALUE {
          | data_list COLON STRING_LIT {
             struct ast_dataw* dataw = $$;
             ast_dataw_addstr(dataw, $3);
-            free($1);
             $$ = dataw;
          }
          ;
