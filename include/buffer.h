@@ -13,7 +13,8 @@ typedef struct
 } bin_buffer_t;
 
 bin_buffer_t* buffer_make();
-void buffer_append(bin_buffer_t* buffer, uint16_t value);
-void buffer_destroy(bin_buffer_t* buffer);
+void buffer_append(bin_buffer_t *buffer, uint16_t value);
+void buffer_set(bin_buffer_t *buffer, int address, uint16_t value);
+void buffer_destroy(bin_buffer_t *buffer);
 
 #endif //BUFFER_H_

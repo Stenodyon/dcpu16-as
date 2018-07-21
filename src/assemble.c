@@ -23,7 +23,7 @@ void reflist_init(reflist_t *reflist)
 {
     reflist->capacity = 8;
     reflist->size = 0;
-    reflist->labelrefs = (labelref_t*)malloc(8 * sizeof(labelrefs));
+    reflist->labelrefs = (labelref_t*)malloc(8 * sizeof(labelref_t));
 }
 
 static
@@ -38,6 +38,12 @@ void reflist_insert(reflist_t *reflist, char * label_name, uint16_t location)
     labelref_t *new_ref = &(reflist->labelrefs[reflist->size++]);
     new_ref->name = label_name;
     new_ref->location = location;
+}
+
+static
+labelref_t * reflist_get(reflist_t *reflist, int pos)
+{
+    return &(reflist->labelrefs[pos]);
 }
 
 static
@@ -77,7 +83,14 @@ uint16_t assemble_instr(struct ast_instr* instr)
     return field.value;
 }
 
-static int instr_size(struct ast_instr* instr)
+static
+int is_local(char * label)
+{
+    return label[0] == '.'; // safe because \0 if empty string
+}
+
+static
+int instr_size(struct ast_instr* instr)
 {
     int size = 1;
     if (instr->opcode != 0 && has_next_word(instr->b))
@@ -90,36 +103,9 @@ static int instr_size(struct ast_instr* instr)
 bin_buffer_t* assemble(ast_t* ast)
 {
     bin_buffer_t* buffer = buffer_make();
-
     hashmap_t* label_map = hashmap_make();
-
-    uint16_t current_word = 0;
-    for (int i = 0; i < ast->size; i++)
-    {
-        struct ast_statement* stmt = ast_get(ast, i);
-        if (stmt->nodetype == AST_INSTR)
-        {
-            struct ast_instr* instr = (struct ast_instr*)stmt;
-            current_word += instr_size(instr);
-        }
-        else if (stmt->nodetype == AST_LABEL)
-        {
-            struct ast_label* label = (struct ast_label*)stmt;
-            hashmap_insert(label_map, label->name, current_word);
-            if (verbose)
-                printf("label '%s' -> %04x\n", label->name, current_word);
-        }
-        else if (stmt->nodetype == AST_DATAW)
-        {
-            struct ast_dataw *dataw = (struct ast_dataw*)stmt;
-            current_word += dataw->size;
-        }
-        else if (stmt->nodetype == AST_DATRS)
-        {
-            struct ast_datrs* datrs = (struct ast_datrs*)stmt;
-            current_word += datrs->size;
-        }
-    }
+    reflist_t reflist;
+    reflist_init(&reflist);
 
     for (int i = 0; i < ast->size; i++)
     {
@@ -135,35 +121,19 @@ bin_buffer_t* assemble(ast_t* ast)
                     instr->b->id,
                     assembled);
 #endif
-            if (instr->a->label_name)
-            {
-                int label_location = hashmap_lookup(label_map, instr->a->label_name);
-                if (label_location == -1)
-                {
-                    fprintf(stderr, "Unknown label '%s'\n", instr->a->label_name);
-                    exit(-1);
-                }
-                instr->a->nextword = label_location;
-            }
-            if (instr->b->label_name)
-            {
-                int label_location = hashmap_lookup(label_map, instr->b->label_name);
-                if (label_location == -1)
-                {
-                    fprintf(stderr, "Unknown label '%s'\n", instr->b->label_name);
-                    exit(-1);
-                }
-                instr->b->nextword = label_location;
-            }
             buffer_append(buffer, assembled);
             if (verbose)
                 printf("%04x: %04x", buffer->size - 1, assembled);
+            if (instr->a->label_name)
+                reflist_insert(&reflist, instr->a->label_name, buffer->size);
             if (has_next_word(instr->a))
             {
                 buffer_append(buffer, instr->a->nextword);
                 if (verbose)
                     printf(" %04x", instr->a->nextword);
             }
+            if (instr->b->label_name)
+                reflist_insert(&reflist, instr->b->label_name, buffer->size);
             if (instr->opcode != 0 && has_next_word(instr->b))
             {
                 buffer_append(buffer, instr->b->nextword);
@@ -172,6 +142,11 @@ bin_buffer_t* assemble(ast_t* ast)
             }
             if (verbose)
                 printf("\n");
+        }
+        else if (stmt->nodetype == AST_LABEL)
+        {
+            struct ast_label* label = (struct ast_label*)stmt;
+            hashmap_insert(label_map, label->name, buffer->size);
         }
         else if (stmt->nodetype == AST_DATAW)
         {
@@ -187,6 +162,15 @@ bin_buffer_t* assemble(ast_t* ast)
         }
     }
 
+    // Set label locations at label references
+    for (int i = 0; i < reflist.size; i++)
+    {
+        labelref_t *ref = reflist_get(&reflist, i);
+        int location = hashmap_lookup(label_map, ref->name);
+        buffer_set(buffer, ref->location, location);
+    }
+
     hashmap_destroy(label_map);
+    reflist_destroy(&reflist);
     return buffer;
 }

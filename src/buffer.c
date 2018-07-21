@@ -22,7 +22,7 @@ bin_buffer_t* buffer_make()
     return buffer;
 }
 
-void buffer_append(bin_buffer_t* buffer, uint16_t value)
+void buffer_append(bin_buffer_t *buffer, uint16_t value)
 {
     if (buffer->size == buffer->capacity)
     {
@@ -33,7 +33,12 @@ void buffer_append(bin_buffer_t* buffer, uint16_t value)
     buffer->data[buffer->size++] = value;
 }
 
-void buffer_destroy(bin_buffer_t* buffer)
+void buffer_set(bin_buffer_t *buffer, int address, uint16_t value)
+{
+    buffer->data[address] = value;
+}
+
+void buffer_destroy(bin_buffer_t *buffer)
 {
     free(buffer->data);
     free(buffer);
