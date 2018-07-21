@@ -29,12 +29,15 @@ typedef struct hashmap
 hashmap_t* hashmap_make();
 
 // Inserts an entry into the hashmap
-void hashmap_insert(hashmap_t* hashmap, const char * name, uint16_t location);
+void hashmap_insert(hashmap_t *hashmap, const char * name, uint16_t location);
 
 // Returns the value indexed by `name`. Returns -1 if `name` is not in the map
-int hashmap_lookup(hashmap_t* hashmap, const char * name);
+int hashmap_lookup(hashmap_t *hashmap, const char * name);
+
+// Removes all the elements from the hashmap
+void hashmap_clear(hashmap_t *hashmap);
 
 // Frees the memory of the hashmap
-void hashmap_destroy(hashmap_t* hashmap);
+void hashmap_destroy(hashmap_t *hashmap);
 
 #endif //HASHMAP_H_

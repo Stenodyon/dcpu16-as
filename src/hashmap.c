@@ -3,7 +3,9 @@
 
 #include "hashmap.h"
 
-static bucket_t* bucket_make()
+// Allocates a bucket
+static
+bucket_t* bucket_make()
 {
     bucket_t* bucket = (bucket_t*)malloc(sizeof(bucket_t));
     bucket->capacity = 1;
@@ -12,7 +14,9 @@ static bucket_t* bucket_make()
     return bucket;
 }
 
-static void bucket_insert(bucket_t* bucket, const char * name, uint16_t location)
+// Adds an entry to the bucket
+static
+void bucket_insert(bucket_t* bucket, const char * name, uint16_t location)
 {
     for (int i = 0; i < bucket->size; i++)
     {
@@ -35,6 +39,7 @@ static void bucket_insert(bucket_t* bucket, const char * name, uint16_t location
     entry->location = location;
 }
 
+// Find the entry `name` in the bucket
 static
 int bucket_find(bucket_t* bucket, const char * name)
 {
@@ -47,13 +52,23 @@ int bucket_find(bucket_t* bucket, const char * name)
     return -1;
 }
 
-static void bucket_destroy(bucket_t* bucket)
+// Removes all the elements from the bucket
+static
+void bucket_clear(bucket_t *bucket)
+{
+    bucket->size = 0;
+}
+
+// Frees the bucket
+static
+void bucket_destroy(bucket_t* bucket)
 {
     free(bucket->entries);
     free(bucket);
 }
 
-static hashmap_t* hashmap_make_n(int capacity)
+static
+hashmap_t* hashmap_make_n(int capacity)
 {
     hashmap_t* hashmap = (hashmap_t*)malloc(sizeof(hashmap_t));
     hashmap->capacity = capacity;
@@ -68,7 +83,8 @@ hashmap_t* hashmap_make()
     return hashmap_make_n(256);
 }
 
-static void hashmap_expand(hashmap_t* hashmap)
+static
+void hashmap_expand(hashmap_t* hashmap)
 {
     hashmap_t* temp_hashmap = hashmap_make_n(hashmap->capacity * 2);
 
@@ -94,7 +110,8 @@ static void hashmap_expand(hashmap_t* hashmap)
 }
 
 // djb2 by Dan Bernstein
-static unsigned long hash(const unsigned char * str)
+static
+unsigned long hash(const unsigned char * str)
 {
     unsigned long hash = 5381;
     int c;
@@ -132,6 +149,18 @@ int hashmap_lookup(hashmap_t* hashmap, const char* name)
     if (bucket == NULL)
         return -1;
     return bucket_find(bucket, name);
+}
+
+void hashmap_clear(hashmap_t *hashmap)
+{
+    for (int i = 0; i < hashmap->capacity; i++)
+    {
+        bucket_t* bucket = hashmap->buckets[i];
+        if (!bucket)
+            continue;
+        bucket_clear(bucket);
+    }
+    hashmap->size = 0;
 }
 
 void hashmap_destroy(hashmap_t* hashmap)
