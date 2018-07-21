@@ -8,7 +8,7 @@
 typedef struct
 {
     char * name;
-    uint16_t address;
+    uint16_t location;
 } labelref_t;
 
 typedef struct
@@ -16,7 +16,41 @@ typedef struct
     int capacity;
     int size;
     labelref_t *labelrefs;
-} label_reflist;
+} reflist_t;
+
+static
+void reflist_init(reflist_t *reflist)
+{
+    reflist->capacity = 8;
+    reflist->size = 0;
+    reflist->labelrefs = (labelref_t*)malloc(8 * sizeof(labelrefs));
+}
+
+static
+void reflist_insert(reflist_t *reflist, char * label_name, uint16_t location)
+{
+    if (reflist->size == reflist->capacity)
+    {
+        reflist->labelrefs = (labelref_t*)realloc(reflist->labelrefs,
+                reflist->capacity * 2 * sizeof(labelref_t));
+        reflist->capacity *= 2;
+    }
+    labelref_t *new_ref = &(reflist->labelrefs[reflist->size++]);
+    new_ref->name = label_name;
+    new_ref->location = location;
+}
+
+static
+void reflist_clear(reflist_t *reflist)
+{
+    reflist->size = 0;
+}
+
+static
+void reflist_destroy(reflist_t *reflist)
+{
+    free(reflist->labelrefs);
+}
 
 int has_next_word(operand_t* operand)
 {
