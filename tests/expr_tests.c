@@ -6,7 +6,7 @@
 
 START_TEST(test_expr_int)
 {
-    expr_t *expr_int = expr_int_make(10);
+    expr_t *expr_int = (expr_t*)expr_int_make(10);
 
     ck_assert(expr_eval(expr_int) == 10);
 
@@ -31,7 +31,7 @@ START_TEST(test_expr_label)
     hashmap_t *label_map = hashmap_make();
     hashmap_insert(label_map, "test_label", 0x420);
 
-    expr_t *expr_label = expr_label_make("test_label");
+    expr_t *expr_label = (expr_t*)expr_label_make("test_label");
 
     expr_eval_labels(&expr_label, label_map);
 
@@ -42,11 +42,11 @@ START_TEST(test_expr_label)
 }
 END_TEST
 
-#define TEST_BINOP(op, lhs, rhs, result)       \
-    expr_t *expr = expr_binop_make(op,         \
-            expr_int_make(lhs),                \
-            expr_int_make(rhs));               \
-    ck_assert_int_eq(expr_eval(expr), result); \
+#define TEST_BINOP(op, lhs, rhs, result)        \
+    expr_t *expr = (expr_t*)expr_binop_make(op, \
+            (expr_t*)expr_int_make(lhs),        \
+            (expr_t*)expr_int_make(rhs));       \
+    ck_assert_int_eq(expr_eval(expr), result);  \
     expr_destroy(expr);
 
 START_TEST(test_expr_add)
