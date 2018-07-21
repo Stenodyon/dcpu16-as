@@ -32,7 +32,7 @@ void reflist_insert(reflist_t *reflist, char * label_name, uint16_t location)
     if (reflist->size == reflist->capacity)
     {
         reflist->labelrefs = (labelref_t*)realloc(reflist->labelrefs,
-                reflist->capacity * 2 * sizeof(labelref_t));
+                             reflist->capacity * 2 * sizeof(labelref_t));
         reflist->capacity *= 2;
     }
     labelref_t *new_ref = &(reflist->labelrefs[reflist->size++]);
@@ -72,7 +72,8 @@ int has_next_word(operand_t* operand)
 
 uint16_t assemble_instr(struct ast_instr* instr)
 {
-    union _field {
+    union _field
+    {
         struct instr_field bits;
         uint16_t value;
     };
@@ -103,9 +104,11 @@ int instr_size(struct ast_instr* instr)
 bin_buffer_t* assemble(ast_t* ast)
 {
     bin_buffer_t* buffer = buffer_make();
-    hashmap_t* label_map = hashmap_make();
-    reflist_t reflist;
+    hashmap_t *label_map = hashmap_make();
+    hashmap_t *local_label_map = hashmap_make();
+    reflist_t reflist, local_reflist;
     reflist_init(&reflist);
+    reflist_init(&local_reflist);
 
     for (int i = 0; i < ast->size; i++)
     {
@@ -116,16 +119,25 @@ bin_buffer_t* assemble(ast_t* ast)
             uint16_t assembled = assemble_instr(instr);
 #ifdef _DEBUG
             printf("opcode: %02x, a: %02x, b: %02x -> %04x\n",
-                    instr->opcode,
-                    instr->a->id,
-                    instr->b->id,
-                    assembled);
+                   instr->opcode,
+                   instr->a->id,
+                   instr->b->id,
+                   assembled);
 #endif
             buffer_append(buffer, assembled);
             if (verbose)
                 printf("%04x: %04x", buffer->size - 1, assembled);
             if (instr->a->label_name)
-                reflist_insert(&reflist, instr->a->label_name, buffer->size);
+            {
+                if (is_local(instr->a->label_name))
+                    reflist_insert(&local_reflist,
+                                   instr->a->label_name,
+                                   buffer->size);
+                else
+                    reflist_insert(&reflist,
+                                   instr->a->label_name,
+                                   buffer->size);
+            }
             if (has_next_word(instr->a))
             {
                 buffer_append(buffer, instr->a->nextword);
@@ -133,7 +145,16 @@ bin_buffer_t* assemble(ast_t* ast)
                     printf(" %04x", instr->a->nextword);
             }
             if (instr->b->label_name)
-                reflist_insert(&reflist, instr->b->label_name, buffer->size);
+            {
+                if (is_local(instr->b->label_name))
+                    reflist_insert(&local_reflist,
+                                   instr->b->label_name,
+                                   buffer->size);
+                else
+                    reflist_insert(&reflist,
+                                   instr->b->label_name,
+                                   buffer->size);
+            }
             if (instr->opcode != 0 && has_next_word(instr->b))
             {
                 buffer_append(buffer, instr->b->nextword);
@@ -146,7 +167,25 @@ bin_buffer_t* assemble(ast_t* ast)
         else if (stmt->nodetype == AST_LABEL)
         {
             struct ast_label* label = (struct ast_label*)stmt;
-            hashmap_insert(label_map, label->name, buffer->size);
+            if (is_local(label->name))
+                hashmap_insert(local_label_map, label->name, buffer->size);
+            else
+            {
+                for (int i = 0; i < local_reflist.size; i++)
+                {
+                    labelref_t *ref = reflist_get(&local_reflist, i);
+                    int location = hashmap_lookup(local_label_map, ref->name);
+                    if (location == -1)
+                    {
+                        fprintf(stderr, "Undeclared label '%s'\n", ref->name);
+                        exit(-1);
+                    }
+                    buffer_set(buffer, ref->location, location);
+                }
+                reflist_clear(&local_reflist);
+                hashmap_clear(local_label_map);
+                hashmap_insert(label_map, label->name, buffer->size);
+            }
         }
         else if (stmt->nodetype == AST_DATAW)
         {
@@ -163,14 +202,31 @@ bin_buffer_t* assemble(ast_t* ast)
     }
 
     // Set label locations at label references
-    for (int i = 0; i < reflist.size; i++)
+    for (int i = 0; i < local_reflist.size; i++) // last local labels
+    {
+        labelref_t *ref = reflist_get(&local_reflist, i);
+        int location = hashmap_lookup(local_label_map, ref->name);
+        if (location == -1)
+        {
+            fprintf(stderr, "Undeclared label '%s'\n", ref->name);
+            exit(-1);
+        }
+        buffer_set(buffer, ref->location, location);
+    }
+    for (int i = 0; i < reflist.size; i++) // global labels
     {
         labelref_t *ref = reflist_get(&reflist, i);
         int location = hashmap_lookup(label_map, ref->name);
+        if (location == -1)
+        {
+            fprintf(stderr, "Undeclared label '%s'\n", ref->name);
+            exit(-1);
+        }
         buffer_set(buffer, ref->location, location);
     }
 
     hashmap_destroy(label_map);
+    reflist_destroy(&local_reflist);
     reflist_destroy(&reflist);
     return buffer;
 }
