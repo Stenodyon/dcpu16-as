@@ -40,6 +40,7 @@ typedef struct
 
 expr_int_t * expr_int_make(int value);
 expr_label_t * expr_label_make(char * label);
+expr_t * expr_current_make(void);
 expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs);
 
 void expr_eval_labels(expr_t **expr, hashmap_t *label_map);

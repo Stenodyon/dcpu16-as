@@ -19,6 +19,13 @@ expr_label_t * expr_label_make(char * label)
     return expr;
 }
 
+expr_t * expr_current_make(void)
+{
+    expr_t *expr = (expr_t*)malloc(sizeof(expr_t));
+    expr->nodetype = EXPR_CURRENT;
+    return expr;
+}
+
 expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs)
 {
     expr_binop_t *expr = (expr_binop_t*)malloc(sizeof(expr_binop_t));
