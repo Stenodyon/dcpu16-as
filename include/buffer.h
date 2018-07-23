@@ -9,6 +9,7 @@ typedef struct
 {
     int capacity;
     int size;
+    int virtual_location;
     uint16_t * data;
 } bin_buffer_t;
 
