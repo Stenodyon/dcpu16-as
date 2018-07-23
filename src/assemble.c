@@ -208,8 +208,9 @@ bin_buffer_t* assemble(ast_t* ast)
                 }
                 else
                 {
+                    expr_eval_current((expr_t**)&dataval->value,
+                                      buffer->virtual_location);
                     expr_t *expr = (expr_t*)dataval->value;
-                    //expr_eval_current(&expr, buffer->virtual_location);
                     if (expr->nodetype == EXPR_INT)
                     {
                         expr_int_t *intexpr = (expr_int_t*)expr;

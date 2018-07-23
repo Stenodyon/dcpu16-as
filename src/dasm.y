@@ -38,7 +38,7 @@ void yyerror(ast_t ** _result, const char *s);
 %token NEWLINE END
 %token SQB_OPEN SQB_CLOSE
 %token PLUS MINUS TIMES DIV_S MOD_S
-%token COLON
+%token COLON DOLLAR
 
 // Registers
 %token A B C X Y Z I J
@@ -284,6 +284,9 @@ factor: VALUE { $$ = (expr_t*)expr_int_make($1); }
       | LABEL_NAME {
           $$ = (expr_t*)expr_label_make($1);
           free($1);
+      }
+      | DOLLAR {
+          $$ = (expr_t*)expr_current_make();
       }
       ;
 

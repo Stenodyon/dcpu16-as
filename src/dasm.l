@@ -42,6 +42,7 @@ extern int yylex();
 \/             { return DIV_S; }
 \%             { return MOD_S; }
 ,              { return COLON; }
+\$             { return DOLLAR; }
 [0-9]+         { yylval.ival = strtol(yytext, NULL, 10); return VALUE; }
 0x[0-9a-fA-F]+ { yylval.ival = strtol(yytext, NULL, 16); return VALUE; }
 
