@@ -49,11 +49,11 @@ struct ast_dataw* ast_make_dataw(void)
     return dataw;
 }
 
-struct ast_datrs* ast_make_datrs(int size)
+struct ast_datrs* ast_make_datrs(expr_t *size_expr)
 {
     struct ast_datrs* datrs = (struct ast_datrs*)malloc(sizeof(struct ast_datrs));
     datrs->nodetype = AST_DATRS;
-    datrs->size = size;
+    datrs->size_expr = size_expr;
     return datrs;
 }
 

@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-
 #include "buffer.h"
+
+
 
 bin_buffer_t* buffer_make()
 {
@@ -23,6 +24,8 @@ bin_buffer_t* buffer_make()
     return buffer;
 }
 
+
+
 void buffer_append(bin_buffer_t *buffer, uint16_t value)
 {
     if (buffer->size == buffer->capacity)
@@ -34,6 +37,8 @@ void buffer_append(bin_buffer_t *buffer, uint16_t value)
     buffer->data[buffer->size++] = value;
     ++buffer->virtual_location;
 }
+
+
 
 uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
 {
@@ -52,12 +57,16 @@ uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
     return ptr;
 }
 
+
+
 void buffer_set(bin_buffer_t *buffer, int address, uint16_t value)
 {
     int physical_address = address - (buffer->virtual_location
                                       - buffer->size);
     buffer->data[physical_address] = value;
 }
+
+
 
 void buffer_destroy(bin_buffer_t *buffer)
 {

@@ -255,8 +255,8 @@ statement: instruction   { $$ = $1; }
                 printf("label '%s'\n", $1);
              #endif
              }
-         | DAT data_list { $$ = (struct ast_statement*)$2; }
-         | RES VALUE     { $$ = (struct ast_statement*)ast_make_datrs($2); }
+         | DAT data_list  { $$ = (struct ast_statement*)$2; }
+         | RES expression { $$ = (struct ast_statement*)ast_make_datrs($2); }
          ;
 
 expression: term { $$ = $1; }

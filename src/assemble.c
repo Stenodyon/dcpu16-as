@@ -228,7 +228,9 @@ bin_buffer_t* assemble(ast_t* ast)
         else if (stmt->nodetype == AST_DATRS)
         {
             struct ast_datrs* datrs = (struct ast_datrs*)stmt;
-            for (int i = 0; i < datrs->size; i++)
+            expr_eval_current(&datrs->size_expr, buffer->virtual_location);
+            int size = expr_eval(datrs->size_expr);
+            for (int i = 0; i < size; i++)
                 buffer_append(buffer, 0x0000);
         }
     }
