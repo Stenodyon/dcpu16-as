@@ -48,6 +48,7 @@ uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
     }
     uint16_t *ptr = buffer->data + buffer->size;
     buffer->size += size;
+    buffer->virtual_location += size;
     return ptr;
 }
 
