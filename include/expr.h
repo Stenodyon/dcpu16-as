@@ -45,6 +45,7 @@ expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs);
 
 void expr_eval_labels(expr_t **expr, hashmap_t *label_map);
 void expr_eval_current(expr_t **expr, int current_byte);
+void expr_simplify(expr_t **expr);
 uint16_t expr_eval(expr_t *expr);
 
 void expr_destroy(expr_t* expr);

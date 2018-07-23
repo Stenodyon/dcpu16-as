@@ -35,7 +35,8 @@ expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs)
     return expr;
 }
 
-void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
+static
+void _expr_eval_labels(expr_t **expr, hashmap_t *label_map)
 {
     switch ((*expr)->nodetype)
     {
@@ -59,8 +60,8 @@ void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
     case EXPR_MOD:
     {
         expr_binop_t* binop = (expr_binop_t*)(*expr);
-        expr_eval_labels(&(binop->rhs), label_map);
-        expr_eval_labels(&(binop->lhs), label_map);
+        _expr_eval_labels(&(binop->rhs), label_map);
+        _expr_eval_labels(&(binop->lhs), label_map);
     }
     break;
     default:
@@ -68,7 +69,14 @@ void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
     }
 }
 
-void expr_eval_current(expr_t **expr, int current_byte)
+void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
+{
+    _expr_eval_labels(expr, label_map);
+    expr_simplify(expr);
+}
+
+static
+void _expr_eval_current(expr_t **expr, int current_byte)
 {
     switch ((*expr)->nodetype)
     {
@@ -83,8 +91,8 @@ void expr_eval_current(expr_t **expr, int current_byte)
     case EXPR_MOD:
     {
         expr_binop_t* binop = (expr_binop_t*)(*expr);
-        expr_eval_current(&(binop->rhs), current_byte);
-        expr_eval_current(&(binop->lhs), current_byte);
+        _expr_eval_current(&(binop->rhs), current_byte);
+        _expr_eval_current(&(binop->lhs), current_byte);
     }
     break;
     default:
@@ -92,48 +100,71 @@ void expr_eval_current(expr_t **expr, int current_byte)
     }
 }
 
-uint16_t expr_eval(expr_t *expr)
+void expr_eval_current(expr_t **expr, int current_byte)
 {
-    switch (expr->nodetype)
+    _expr_eval_current(expr, current_byte);
+    expr_simplify(expr);
+}
+
+void expr_simplify(expr_t **expr)
+{
+    switch ((*expr)->nodetype)
     {
-    case EXPR_INT:
-    {
-        expr_int_t *expr_int = (expr_int_t*)expr;
-        return expr_int->value;
-    }
     case EXPR_ADD:
     case EXPR_SUB:
     case EXPR_MUL:
     case EXPR_DIV:
     case EXPR_MOD:
     {
-        expr_binop_t* binop = (expr_binop_t*)expr;
-        int lhs = expr_eval(binop->lhs);
-        int rhs = expr_eval(binop->rhs);
-        switch (expr->nodetype)
+        expr_binop_t* binop = (expr_binop_t*)(*expr);
+        expr_simplify(&(binop->lhs));
+        expr_simplify(&(binop->rhs));
+        if (binop->lhs->nodetype == EXPR_INT
+                && binop->rhs->nodetype == EXPR_INT)
         {
-        case EXPR_ADD:
-            return lhs + rhs;
-        case EXPR_SUB:
-            return lhs - rhs;
-        case EXPR_MUL:
-            return lhs * rhs;
-        case EXPR_DIV:
-            if (rhs == 0)
+            int lhs = ((expr_int_t*)binop->lhs)->value;
+            int rhs = ((expr_int_t*)binop->rhs)->value;
+            switch ((*expr)->nodetype)
             {
-                fprintf(stderr, "Error, division by zero\n");
-                exit(-1);
+            case EXPR_ADD:
+                *expr = (expr_t*)expr_int_make(lhs + rhs);
+                break;
+            case EXPR_SUB:
+                *expr = (expr_t*)expr_int_make(lhs - rhs);
+                break;
+            case EXPR_MUL:
+                *expr = (expr_t*)expr_int_make(lhs * rhs);
+                break;
+            case EXPR_DIV:
+                if (rhs == 0)
+                {
+                    fprintf(stderr, "Error, division by zero\n");
+                    exit(-1);
+                }
+                *expr = (expr_t*)expr_int_make(lhs / rhs);
+                break;
+            case EXPR_MOD:
+                *expr = (expr_t*)expr_int_make(lhs % rhs);
+                break;
             }
-            return lhs / rhs;
-        case EXPR_MOD:
-            return lhs % rhs;
         }
+        break;
     }
-    break;
     default:
-        fprintf(stderr, "Error, could not evaluate expression");
+        break;
+    }
+}
+
+uint16_t expr_eval(expr_t *expr)
+{
+    expr_t *e = expr;
+    expr_simplify(&e);
+    if (e->nodetype != EXPR_INT)
+    {
+        fprintf(stderr, "Could not evaluate expression\n");
         exit(-1);
     }
+    return ((expr_int_t*)e)->value;
 }
 
 void expr_destroy(expr_t* expr)
