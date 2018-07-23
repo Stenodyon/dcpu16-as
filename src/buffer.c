@@ -35,6 +35,22 @@ void buffer_append(bin_buffer_t *buffer, uint16_t value)
     ++buffer->virtual_location;
 }
 
+uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
+{
+    if (buffer->size + size >= buffer->capacity)
+    {
+        int new_capacity = buffer->capacity * 2;
+        while (buffer->size + size >= new_capacity)
+            new_capacity *= 2;
+        buffer->data = (uint16_t*)realloc(buffer->data,
+                                          new_capacity * sizeof(uint16_t));
+        buffer->capacity = new_capacity;
+    }
+    uint16_t *ptr = buffer->data + buffer->size;
+    buffer->size += size;
+    return ptr;
+}
+
 void buffer_set(bin_buffer_t *buffer, int address, uint16_t value)
 {
     int physical_address = address - (buffer->virtual_location

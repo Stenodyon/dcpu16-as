@@ -15,6 +15,7 @@ typedef struct
 
 bin_buffer_t* buffer_make();
 void buffer_append(bin_buffer_t *buffer, uint16_t value);
+uint16_t * buffer_reserve(bin_buffer_t *buffer, int size);
 void buffer_set(bin_buffer_t *buffer, int address, uint16_t value);
 void buffer_destroy(bin_buffer_t *buffer);
 
