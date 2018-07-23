@@ -132,16 +132,16 @@ bin_buffer_t* assemble(ast_t* ast)
 #endif
             buffer_append(buffer, assembled);
             if (verbose)
-                printf("%04x: %04x", buffer->size - 1, assembled);
+                printf("%04x: %04x", buffer->virtual_location - 1, assembled);
             if (instr->a->label_name)
             {
                 if (is_local(instr->a->label_name))
                     reflist_insert(&local_reflist,
-                                   buffer->size,
+                                   buffer->virtual_location,
                                    (expr_t*)expr_label_make(instr->a->label_name));
                 else
                     reflist_insert(&reflist,
-                                   buffer->size,
+                                   buffer->virtual_location,
                                    (expr_t*)expr_label_make(instr->a->label_name));
             }
             if (has_next_word(instr->a))
@@ -154,11 +154,11 @@ bin_buffer_t* assemble(ast_t* ast)
             {
                 if (is_local(instr->b->label_name))
                     reflist_insert(&local_reflist,
-                                   buffer->size,
+                                   buffer->virtual_location,
                                    (expr_t*)expr_label_make(instr->b->label_name));
                 else
                     reflist_insert(&reflist,
-                                   buffer->size,
+                                   buffer->virtual_location,
                                    (expr_t*)expr_label_make(instr->b->label_name));
             }
             if (instr->opcode != 0 && has_next_word(instr->b))
@@ -174,7 +174,9 @@ bin_buffer_t* assemble(ast_t* ast)
         {
             struct ast_label* label = (struct ast_label*)stmt;
             if (is_local(label->name))
-                hashmap_insert(local_label_map, label->name, buffer->size);
+                hashmap_insert(local_label_map,
+                               label->name,
+                               buffer->virtual_location);
             else
             {
                 for (int i = 0; i < local_reflist.size; i++)
@@ -186,7 +188,9 @@ bin_buffer_t* assemble(ast_t* ast)
                 }
                 reflist_clear(&local_reflist);
                 hashmap_clear(local_label_map);
-                hashmap_insert(label_map, label->name, buffer->size);
+                hashmap_insert(label_map,
+                               label->name,
+                               buffer->virtual_location);
             }
         }
         else if (stmt->nodetype == AST_DATAW)
@@ -205,6 +209,7 @@ bin_buffer_t* assemble(ast_t* ast)
                 else
                 {
                     expr_t *expr = (expr_t*)dataval->value;
+                    //expr_eval_current(&expr, buffer->virtual_location);
                     if (expr->nodetype == EXPR_INT)
                     {
                         expr_int_t *intexpr = (expr_int_t*)expr;
@@ -212,7 +217,7 @@ bin_buffer_t* assemble(ast_t* ast)
                     }
                     else
                     {
-                        reflist_insert(&reflist, buffer->size, expr);
+                        reflist_insert(&reflist, buffer->virtual_location, expr);
                         dataval->value = NULL;
                         buffer_append(buffer, 0);
                     }
