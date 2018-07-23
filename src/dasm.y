@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "ast.h"
+#include "expr.h"
 
 #ifdef _DEBUG
 #define YYDEBUG 1
@@ -27,6 +28,7 @@ void yyerror(ast_t ** _result, const char *s);
     uint16_t ival;
     char * sval;
     operand_t* operand_val;
+    expr_t *expr_val;
     struct ast_statement* stmt_val;
     struct ast_dataw* data_list_val;
     ast_t* ast_val;
@@ -35,7 +37,8 @@ void yyerror(ast_t ** _result, const char *s);
 // Random
 %token NEWLINE END
 %token SQB_OPEN SQB_CLOSE
-%token PLUS COLON
+%token PLUS MINUS TIMES DIV_S MOD_S
+%token COLON
 
 // Registers
 %token A B C X Y Z I J
@@ -72,6 +75,10 @@ void yyerror(ast_t ** _result, const char *s);
 %type <operand_val> monopcode;
 
 %type <data_list_val> data_list;
+
+%type <expr_val> expression;
+%type <expr_val> term;
+%type <expr_val> factor;
 
 %type <stmt_val> instruction;
 %type <stmt_val> statement;
@@ -219,9 +226,9 @@ instruction: bin_opcode writable_operand COLON readable_operand {
             $$ = (struct ast_statement*)ast_make_instr(0, $1, empty); }
            ;
 
-data_list: VALUE {
+data_list: expression {
             struct ast_dataw* dataw = ast_make_dataw();
-            ast_dataw_addint(dataw, $1);
+            ast_dataw_addexp(dataw, $1);
             $$ = dataw;
          }
          | STRING_LIT {
@@ -229,9 +236,9 @@ data_list: VALUE {
             ast_dataw_addstr(dataw, $1);
             $$ = dataw;
          }
-         | data_list COLON VALUE {
+         | data_list COLON expression {
             struct ast_dataw* dataw = $$;
-            ast_dataw_addint(dataw, $3);
+            ast_dataw_addexp(dataw, $3);
             $$ = dataw;
          }
          | data_list COLON STRING_LIT {
@@ -242,10 +249,43 @@ data_list: VALUE {
          ;
 
 statement: instruction   { $$ = $1; }
-         | LABEL         { $$ = (struct ast_statement*)ast_make_label($1); }
+         | LABEL         {
+             $$ = (struct ast_statement*)ast_make_label($1);
+             #ifdef _DEBUG
+                printf("label '%s'\n", $1);
+             #endif
+             }
          | DAT data_list { $$ = (struct ast_statement*)$2; }
          | RES VALUE     { $$ = (struct ast_statement*)ast_make_datrs($2); }
          ;
+
+expression: term { $$ = $1; }
+          | expression PLUS term {
+            $$ = (expr_t*)expr_binop_make(EXPR_ADD, $1, $3);
+          }
+          | expression MINUS term {
+            $$ = (expr_t*)expr_binop_make(EXPR_SUB, $1, $3);
+          }
+          ;
+
+term: factor { $$ = $1; }
+    | term TIMES factor {
+            $$ = (expr_t*)expr_binop_make(EXPR_MUL, $1, $3);
+    }
+    | term DIV_S factor {
+            $$ = (expr_t*)expr_binop_make(EXPR_DIV, $1, $3);
+    }
+    | term MOD_S factor {
+            $$ = (expr_t*)expr_binop_make(EXPR_MOD, $1, $3);
+    }
+    ;
+
+factor: VALUE { $$ = (expr_t*)expr_int_make($1); }
+      | LABEL_NAME {
+          $$ = (expr_t*)expr_label_make($1);
+          free($1);
+      }
+      ;
 
 %%
 

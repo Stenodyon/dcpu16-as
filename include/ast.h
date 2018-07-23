@@ -5,6 +5,8 @@
 
 #include <stdint.h>
 
+#include "expr.h"
+
 struct ast_operand
 {
     int id;
@@ -77,6 +79,7 @@ void ast_destroy_stmt(struct ast_statement* stmt);
 
 void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value);
 void ast_dataw_addstr(struct ast_dataw *dataw, const char * str);
+void ast_dataw_addexp(struct ast_dataw *dataw, expr_t *expr);
 
 ast_t* ast_make(void);
 struct ast_statement* ast_get(ast_t* ast, int index);

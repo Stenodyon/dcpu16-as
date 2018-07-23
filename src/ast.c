@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "ast.h"
@@ -44,7 +45,7 @@ struct ast_dataw* ast_make_dataw(void)
     dataw->nodetype = AST_DATAW;
     dataw->capacity = 16;
     dataw->size = 0;
-    dataw->data = (uint16_t*)malloc(16 * sizeof(struct ast_dataw_val));
+    dataw->data = (struct ast_dataw_val*)malloc(16 * sizeof(struct ast_dataw_val));
     return dataw;
 }
 
@@ -58,36 +59,45 @@ struct ast_datrs* ast_make_datrs(int size)
 
 void ast_destroy_stmt(struct ast_statement* stmt)
 {
-    if (stmt->nodetype == AST_LABEL)
+    switch (stmt->nodetype)
+    {
+    case AST_LABEL:
     {
         struct ast_label* label = (struct ast_label*)stmt;
         free(label->name);
         free(label);
+        break;
     }
-    else if (stmt->nodetype == AST_INSTR)
+    case AST_INSTR:
     {
         struct ast_instr* instr = (struct ast_instr*)stmt;
         ast_destroy_operand(instr->a);
         ast_destroy_operand(instr->b);
         free(instr);
+        break;
     }
-    else if (stmt->nodetype == AST_DATAW)
+    case AST_DATAW:
     {
         struct ast_dataw* dataw = (struct ast_dataw*)stmt;
         for (int i = 0; i < dataw->size; i++)
         {
             struct ast_dataw_val *dataval = &(dataw->data[i]);
             if (dataval->is_string)
-                free((char *)(dataval->value));
-            else
+                free(dataval->value);
+            else if(dataval->value)
                 expr_destroy((expr_t*)(dataval->value));
         }
         free(dataw->data);
         free(dataw);
+        break;
     }
-    else if (stmt->nodetype == AST_DATRS)
-    {
+    case AST_DATRS:
         free(stmt);
+        break;
+    default:
+        fprintf(stderr, "Error while destroying AST: "
+                "Unknown node type %i\n", stmt->nodetype);
+        exit(-1);
     }
 }
 
@@ -117,6 +127,14 @@ void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
     strval.is_string = 1;
     strval.value = (void*)str;
     ast_dataw_insert(dataw, &strval);
+}
+
+void ast_dataw_addexp(struct ast_dataw *dataw, expr_t *expr)
+{
+    struct ast_dataw_val expval;
+    expval.is_string = 0;
+    expval.value = (void*)expr;
+    ast_dataw_insert(dataw, &expval);
 }
 
 ast_t* ast_make(void)

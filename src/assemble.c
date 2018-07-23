@@ -213,6 +213,7 @@ bin_buffer_t* assemble(ast_t* ast)
                     else
                     {
                         reflist_insert(&reflist, buffer->size, expr);
+                        dataval->value = NULL;
                         buffer_append(buffer, 0);
                     }
                 }

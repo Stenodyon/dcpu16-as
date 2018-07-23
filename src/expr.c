@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-
+#include "utils.h"
 #include "expr.h"
 
 expr_int_t * expr_int_make(int value)
@@ -15,7 +15,7 @@ expr_label_t * expr_label_make(char * label)
 {
     expr_label_t *expr = (expr_label_t*)malloc(sizeof(expr_label_t));
     expr->nodetype = EXPR_LABEL;
-    expr->name = label;
+    expr->name = strdup(label);
     return expr;
 }
 
@@ -140,6 +140,12 @@ void expr_destroy(expr_t* expr)
 {
     switch (expr->nodetype)
     {
+    case EXPR_LABEL:
+    {
+        expr_label_t* label = (expr_label_t*)expr;
+        free(label->name);
+        break;
+    }
     case EXPR_ADD:
     case EXPR_SUB:
     case EXPR_MUL:
@@ -149,10 +155,10 @@ void expr_destroy(expr_t* expr)
         expr_binop_t* binop = (expr_binop_t*)expr;
         expr_destroy(binop->lhs);
         expr_destroy(binop->rhs);
-    }
-    __attribute__((fallthrough));
-    default:
-        free(expr);
         break;
     }
+    default:
+        break;
+    }
+    free(expr);
 }

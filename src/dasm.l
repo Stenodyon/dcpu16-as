@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "utils.h"
 #include "ast.h"
+#include "expr.h"
 
 #include "dasm.tab.h"
 
@@ -35,6 +37,10 @@ extern int yylex();
 \[             { return SQB_OPEN; }
 \]             { return SQB_CLOSE; }
 \+             { return PLUS; }
+\-             { return MINUS; }
+\*             { return TIMES; }
+\/             { return DIV_S; }
+\%             { return MOD_S; }
 ,              { return COLON; }
 [0-9]+         { yylval.ival = strtol(yytext, NULL, 10); return VALUE; }
 0x[0-9a-fA-F]+ { yylval.ival = strtol(yytext, NULL, 16); return VALUE; }
@@ -116,18 +122,3 @@ POP            { return POP; }
 }
 
 %%
-
-#if 0
-int main(void)
-{
-    while (yylex());
-    return 0;
-}
-#endif
-
-char * strdup(char * to_copy)
-{
-    char * ptr = (char*)malloc((strlen(to_copy) + 1) * sizeof(char));
-    strcpy(ptr, to_copy);
-    return ptr;
-}
