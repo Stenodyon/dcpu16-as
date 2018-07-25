@@ -174,9 +174,11 @@ bin_buffer_t* assemble(ast_t* ast)
         {
             struct ast_label* label = (struct ast_label*)stmt;
             if (is_local(label->name))
+            {
                 hashmap_insert(local_label_map,
                                label->name,
                                buffer->virtual_location);
+            }
             else
             {
                 for (int i = 0; i < local_reflist.size; i++)
