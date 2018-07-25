@@ -44,6 +44,8 @@ void _expr_eval_labels(expr_t **expr, hashmap_t *label_map)
     {
         expr_label_t *label_expr = (expr_label_t*)(*expr);
         int location = hashmap_lookup(label_map, label_expr->name);
+        if (location == -1)
+            return;
         expr_destroy(*expr);
         *expr = (expr_t*)expr_int_make(location);
     }
