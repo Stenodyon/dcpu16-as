@@ -107,6 +107,11 @@ int reflist_find_locals(reflist_t *reflist)
         valueref_t *ref = reflist_get(reflist, i);
         if (expr_count_labels(ref->expr, is_local))
             return i;
+#if 0
+        fprintf(stderr, "No locals found in ");
+        expr_fprint(stderr, ref->expr);
+        fprintf(stderr, "\n");
+#endif
     }
     return -1;
 }
@@ -187,6 +192,14 @@ int instr_size(struct ast_instr* instr)
     return size;
 }
 #endif
+
+// ----------------------------------------------------------------------------
+
+static
+void print_hashmap(const char * label_name, uint16_t location)
+{
+    fprintf(stderr, "%s -> %i\n", label_name, location);
+}
 
 // ----------------------------------------------------------------------------
 
@@ -305,7 +318,7 @@ bin_buffer_t* assemble(ast_t* ast)
                     }
                     else
                     {
-                        reflist_insert(&reflist,
+                        reflist_insert(&local_reflist,
                                        stmt->location,
                                        buffer->virtual_location, expr);
                         dataval->value = NULL;
@@ -348,6 +361,10 @@ bin_buffer_t* assemble(ast_t* ast)
                     ref->source_location.line);
             expr_fprint(stderr, ref->expr);
             fprintf(stderr, "\n");
+#if 0
+            hashmap_apply(local_label_map, print_hashmap);
+            hashmap_apply(label_map, print_hashmap);
+#endif
             exit(-1);
         }
         buffer_set(buffer, ref->location, value);
