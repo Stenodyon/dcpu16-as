@@ -11,6 +11,8 @@ strlist_t * strlist_make()
     return strlist;
 }
 
+// ----------------------------------------------------------------------------
+
 void strlist_insert(strlist_t *strlist, char *entry)
 {
     if (strlist->size == strlist->capacity)
@@ -21,6 +23,8 @@ void strlist_insert(strlist_t *strlist, char *entry)
     }
     strlist->entries[strlist->size++] = entry;
 }
+
+// ----------------------------------------------------------------------------
 
 void strlist_destroy(strlist_t *strlist)
 {

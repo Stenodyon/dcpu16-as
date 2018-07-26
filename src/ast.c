@@ -14,12 +14,16 @@ operand_t * ast_make_operand(int id, uint16_t nextword)
     return operand;
 }
 
+// ----------------------------------------------------------------------------
+
 void ast_destroy_operand(operand_t* operand)
 {
     if (operand->label_name)
         free(operand->label_name);
     free(operand);
 }
+
+// ----------------------------------------------------------------------------
 
 struct ast_label* ast_make_label(ast_location_t location, char* name)
 {
@@ -29,6 +33,8 @@ struct ast_label* ast_make_label(ast_location_t location, char* name)
     label->name = name;
     return label;
 }
+
+// ----------------------------------------------------------------------------
 
 struct ast_instr* ast_make_instr(ast_location_t location,
                                  int opcode, operand_t* a, operand_t* b)
@@ -42,6 +48,8 @@ struct ast_instr* ast_make_instr(ast_location_t location,
     return instr;
 }
 
+// ----------------------------------------------------------------------------
+
 struct ast_dataw* ast_make_dataw(ast_location_t location)
 {
     struct ast_dataw* dataw = (struct ast_dataw*)malloc(sizeof(struct ast_dataw));
@@ -53,6 +61,8 @@ struct ast_dataw* ast_make_dataw(ast_location_t location)
     return dataw;
 }
 
+// ----------------------------------------------------------------------------
+
 struct ast_datrs* ast_make_datrs(ast_location_t location, expr_t *size_expr)
 {
     struct ast_datrs* datrs = (struct ast_datrs*)malloc(sizeof(struct ast_datrs));
@@ -61,6 +71,8 @@ struct ast_datrs* ast_make_datrs(ast_location_t location, expr_t *size_expr)
     datrs->size_expr = size_expr;
     return datrs;
 }
+
+// ----------------------------------------------------------------------------
 
 void ast_destroy_stmt(struct ast_statement* stmt)
 {
@@ -106,6 +118,8 @@ void ast_destroy_stmt(struct ast_statement* stmt)
     }
 }
 
+// ----------------------------------------------------------------------------
+
 static
 void ast_dataw_insert(struct ast_dataw *dataw, struct ast_dataw_val *value)
 {
@@ -118,6 +132,8 @@ void ast_dataw_insert(struct ast_dataw *dataw, struct ast_dataw_val *value)
     dataw->data[dataw->size++] = *value;
 }
 
+// ----------------------------------------------------------------------------
+
 void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value)
 {
     struct ast_dataw_val intval;
@@ -125,6 +141,8 @@ void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value)
     intval.value = (void*)expr_int_make(value);
     ast_dataw_insert(dataw, &intval);
 }
+
+// ----------------------------------------------------------------------------
 
 void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
 {
@@ -134,6 +152,8 @@ void ast_dataw_addstr(struct ast_dataw *dataw, const char * str)
     ast_dataw_insert(dataw, &strval);
 }
 
+// ----------------------------------------------------------------------------
+
 void ast_dataw_addexp(struct ast_dataw *dataw, expr_t *expr)
 {
     struct ast_dataw_val expval;
@@ -141,6 +161,8 @@ void ast_dataw_addexp(struct ast_dataw *dataw, expr_t *expr)
     expval.value = (void*)expr;
     ast_dataw_insert(dataw, &expval);
 }
+
+// ----------------------------------------------------------------------------
 
 ast_t* ast_make(void)
 {
@@ -151,10 +173,14 @@ ast_t* ast_make(void)
     return ast;
 }
 
+// ----------------------------------------------------------------------------
+
 struct ast_statement* ast_get(ast_t* ast, int index)
 {
     return ast->data[index];
 }
+
+// ----------------------------------------------------------------------------
 
 void ast_append(ast_t* ast, struct ast_statement* stmt)
 {
@@ -166,6 +192,8 @@ void ast_append(ast_t* ast, struct ast_statement* stmt)
     }
     ast->data[ast->size++] = stmt;
 }
+
+// ----------------------------------------------------------------------------
 
 void ast_destroy(ast_t* ast)
 {

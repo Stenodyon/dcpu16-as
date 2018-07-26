@@ -24,7 +24,7 @@ bin_buffer_t* buffer_make()
     return buffer;
 }
 
-
+// ----------------------------------------------------------------------------
 
 void buffer_append(bin_buffer_t *buffer, uint16_t value)
 {
@@ -38,7 +38,7 @@ void buffer_append(bin_buffer_t *buffer, uint16_t value)
     ++buffer->virtual_location;
 }
 
-
+// ----------------------------------------------------------------------------
 
 uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
 {
@@ -57,7 +57,7 @@ uint16_t * buffer_reserve(bin_buffer_t *buffer, int size)
     return ptr;
 }
 
-
+// ----------------------------------------------------------------------------
 
 void buffer_set(bin_buffer_t *buffer, int address, uint16_t value)
 {
@@ -66,7 +66,7 @@ void buffer_set(bin_buffer_t *buffer, int address, uint16_t value)
     buffer->data[physical_address] = value;
 }
 
-
+// ----------------------------------------------------------------------------
 
 void buffer_destroy(bin_buffer_t *buffer)
 {

@@ -11,6 +11,8 @@ expr_int_t * expr_int_make(int value)
     return expr;
 }
 
+// ----------------------------------------------------------------------------
+
 expr_label_t * expr_label_make(char * label)
 {
     expr_label_t *expr = (expr_label_t*)malloc(sizeof(expr_label_t));
@@ -19,12 +21,16 @@ expr_label_t * expr_label_make(char * label)
     return expr;
 }
 
+// ----------------------------------------------------------------------------
+
 expr_t * expr_current_make(void)
 {
     expr_t *expr = (expr_t*)malloc(sizeof(expr_t));
     expr->nodetype = EXPR_CURRENT;
     return expr;
 }
+
+// ----------------------------------------------------------------------------
 
 expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs)
 {
@@ -34,6 +40,8 @@ expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs)
     expr->rhs = rhs;
     return expr;
 }
+
+// ----------------------------------------------------------------------------
 
 void expr_fprint(FILE* file_handle, expr_t *expr)
 {
@@ -101,6 +109,8 @@ void expr_fprint(FILE* file_handle, expr_t *expr)
     }
 }
 
+// ----------------------------------------------------------------------------
+
 static
 void _expr_eval_labels(expr_t **expr, hashmap_t *label_map)
 {
@@ -132,11 +142,15 @@ void _expr_eval_labels(expr_t **expr, hashmap_t *label_map)
     }
 }
 
+// ----------------------------------------------------------------------------
+
 void expr_eval_labels(expr_t **expr, hashmap_t *label_map)
 {
     _expr_eval_labels(expr, label_map);
     expr_simplify(expr);
 }
+
+// ----------------------------------------------------------------------------
 
 static
 void _expr_eval_current(expr_t **expr, int current_byte)
@@ -163,11 +177,15 @@ void _expr_eval_current(expr_t **expr, int current_byte)
     }
 }
 
+// ----------------------------------------------------------------------------
+
 void expr_eval_current(expr_t **expr, int current_byte)
 {
     _expr_eval_current(expr, current_byte);
     expr_simplify(expr);
 }
+
+// ----------------------------------------------------------------------------
 
 void expr_simplify(expr_t **expr)
 {
@@ -218,6 +236,8 @@ void expr_simplify(expr_t **expr)
     }
 }
 
+// ----------------------------------------------------------------------------
+
 int expr_eval(expr_t *expr)
 {
     expr_t *e = expr;
@@ -226,6 +246,8 @@ int expr_eval(expr_t *expr)
         return -1;
     return ((expr_int_t*)e)->value;
 }
+
+// ----------------------------------------------------------------------------
 
 int expr_count_labels(expr_t *expr, int (*filter)(char *))
 {
@@ -252,7 +274,10 @@ int expr_count_labels(expr_t *expr, int (*filter)(char *))
     default:
         break;
     }
+    return 0;
 }
+
+// ----------------------------------------------------------------------------
 
 void expr_destroy(expr_t* expr)
 {
