@@ -9,7 +9,7 @@
 
 extern int yydebug;
 extern FILE* yyin;
-extern int yyparse(ast_t** _result);
+extern int yyparse(ast_t **_result, char *filename);
 
 const char *argp_program_version = "DCPU-16 assembler 0.1";
 const char *argp_program_bug_address = "<github.com/Stenodyon/dcpu16-as/issues>";
@@ -67,7 +67,7 @@ int main(int argc, char ** argv)
             perror(argv[1]);
             exit(-1);
         }
-        yyparse(&result);
+        yyparse(&result, arguments.input_files->entries[i]);
         fclose(yyin);
     }
     strlist_destroy(arguments.input_files);

@@ -6,47 +6,74 @@
 #include "assemble.h"
 #include "hashmap.h"
 #include "expr.h"
+#include "ast.h"
+
+static int is_local(char * label);
 
 typedef struct
 {
+    ast_location_t source_location;
     uint16_t location;
     expr_t * expr;
 } valueref_t;
 
 typedef struct
 {
+    bin_buffer_t *assembly;
     int capacity;
     int size;
     valueref_t *refs;
 } reflist_t;
 
 static
-void reflist_init(reflist_t *reflist)
+void reflist_init(reflist_t *reflist, bin_buffer_t *assembly)
 {
+    reflist->assembly = assembly;
     reflist->capacity = 8;
     reflist->size = 0;
     reflist->refs = (valueref_t*)malloc(8 * sizeof(valueref_t));
 }
 
+// ----------------------------------------------------------------------------
+
 static
-void reflist_insert(reflist_t *reflist, uint16_t location, expr_t *expr)
+void reflist_insert(reflist_t *reflist, ast_location_t source_location,
+                    uint16_t location, expr_t *expr)
 {
     if (reflist->size == reflist->capacity)
     {
+        int new_capacity = 2 * reflist->capacity;
         reflist->refs = (valueref_t*)realloc(reflist->refs,
-                                             reflist->capacity * 2 * sizeof(valueref_t));
-        reflist->capacity *= 2;
+                                             new_capacity * sizeof(valueref_t));
+        reflist->capacity = new_capacity;
     }
     valueref_t *new_ref = &(reflist->refs[reflist->size++]);
+    new_ref->source_location = source_location;
     new_ref->location = location;
     new_ref->expr = expr;
 }
+
+// ----------------------------------------------------------------------------
 
 static
 valueref_t * reflist_get(reflist_t *reflist, int pos)
 {
     return &(reflist->refs[pos]);
 }
+
+// ----------------------------------------------------------------------------
+
+static
+void reflist_eval_labels(reflist_t *reflist, hashmap_t *label_map)
+{
+    for (int i = 0; i < reflist->size; i++)
+    {
+        valueref_t *ref = reflist_get(reflist, i);
+        expr_eval_labels(&(ref->expr), label_map);
+    }
+}
+
+// ----------------------------------------------------------------------------
 
 static
 void reflist_clear(reflist_t *reflist)
@@ -56,6 +83,50 @@ void reflist_clear(reflist_t *reflist)
     reflist->size = 0;
 }
 
+// ----------------------------------------------------------------------------
+
+static
+void reflist_transfer(reflist_t *dest, reflist_t *src)
+{
+    for (int i = 0; i < src->size; i++)
+    {
+        valueref_t *ref = reflist_get(src, i);
+        reflist_insert(dest, ref->source_location, ref->location, ref->expr);
+        ref->expr = NULL;
+    }
+    reflist_clear(src);
+}
+
+// ----------------------------------------------------------------------------
+
+static
+int reflist_find_locals(reflist_t *reflist)
+{
+    for (int i = 0; i < reflist->size; i++)
+    {
+        valueref_t *ref = reflist_get(reflist, i);
+        if (expr_count_labels(ref->expr, is_local))
+            return i;
+    }
+    return -1;
+}
+
+// ----------------------------------------------------------------------------
+
+static
+int reflist_has_locals(reflist_t *reflist)
+{
+    for (int i = 0; i < reflist->size; i++)
+    {
+        valueref_t *ref = reflist_get(reflist, i);
+        if (expr_count_labels(ref->expr, is_local))
+            return 1;
+    }
+    return 0;
+}
+
+// ----------------------------------------------------------------------------
+
 static
 void reflist_destroy(reflist_t *reflist)
 {
@@ -63,6 +134,8 @@ void reflist_destroy(reflist_t *reflist)
         expr_destroy(reflist->refs[i].expr);
     free(reflist->refs);
 }
+
+// ----------------------------------------------------------------------------
 
 int has_next_word(operand_t* operand)
 {
@@ -75,6 +148,8 @@ int has_next_word(operand_t* operand)
 
     return 0;
 }
+
+// ----------------------------------------------------------------------------
 
 uint16_t assemble_instr(struct ast_instr* instr)
 {
@@ -90,12 +165,17 @@ uint16_t assemble_instr(struct ast_instr* instr)
     return field.value;
 }
 
+// ----------------------------------------------------------------------------
+
 static
 int is_local(char * label)
 {
     return label[0] == '.'; // safe because \0 if empty string
 }
 
+// ----------------------------------------------------------------------------
+
+#if 0
 static
 int instr_size(struct ast_instr* instr)
 {
@@ -106,6 +186,9 @@ int instr_size(struct ast_instr* instr)
         size++;
     return size;
 }
+#endif
+
+// ----------------------------------------------------------------------------
 
 bin_buffer_t* assemble(ast_t* ast)
 {
@@ -113,8 +196,8 @@ bin_buffer_t* assemble(ast_t* ast)
     hashmap_t *label_map = hashmap_make();
     hashmap_t *local_label_map = hashmap_make();
     reflist_t reflist, local_reflist;
-    reflist_init(&reflist);
-    reflist_init(&local_reflist);
+    reflist_init(&reflist, buffer);
+    reflist_init(&local_reflist, buffer);
 
     for (int i = 0; i < ast->size; i++)
     {
@@ -135,14 +218,14 @@ bin_buffer_t* assemble(ast_t* ast)
                 printf("%04x: %04x", buffer->virtual_location - 1, assembled);
             if (instr->a->label_name)
             {
-                if (is_local(instr->a->label_name))
-                    reflist_insert(&local_reflist,
-                                   buffer->virtual_location,
-                                   (expr_t*)expr_label_make(instr->a->label_name));
-                else
-                    reflist_insert(&reflist,
-                                   buffer->virtual_location,
-                                   (expr_t*)expr_label_make(instr->a->label_name));
+                reflist_t *label_reflist =
+                    (is_local(instr->a->label_name))
+                    ? &local_reflist
+                    : &reflist;
+                reflist_insert(label_reflist,
+                               stmt->location,
+                               buffer->virtual_location,
+                               (expr_t*)expr_label_make(instr->a->label_name));
             }
             if (has_next_word(instr->a))
             {
@@ -152,14 +235,14 @@ bin_buffer_t* assemble(ast_t* ast)
             }
             if (instr->b->label_name)
             {
-                if (is_local(instr->b->label_name))
-                    reflist_insert(&local_reflist,
-                                   buffer->virtual_location,
-                                   (expr_t*)expr_label_make(instr->b->label_name));
-                else
-                    reflist_insert(&reflist,
-                                   buffer->virtual_location,
-                                   (expr_t*)expr_label_make(instr->b->label_name));
+                reflist_t *label_reflist =
+                    (is_local(instr->b->label_name))
+                    ? &local_reflist
+                    : &reflist;
+                reflist_insert(label_reflist,
+                               stmt->location,
+                               buffer->virtual_location,
+                               (expr_t*)expr_label_make(instr->b->label_name));
             }
             if (instr->opcode != 0 && has_next_word(instr->b))
             {
@@ -181,14 +264,16 @@ bin_buffer_t* assemble(ast_t* ast)
             }
             else
             {
-                for (int i = 0; i < local_reflist.size; i++)
+                reflist_eval_labels(&local_reflist, local_label_map);
+                int index = reflist_find_locals(&local_reflist);
+                if (index != -1)
                 {
-                    valueref_t *ref = reflist_get(&local_reflist, i);
-                    expr_eval_labels(&(ref->expr), local_label_map);
-                    int value = expr_eval(ref->expr);
-                    buffer_set(buffer, ref->location, value);
+                    fprintf(stderr, "%s:%i Unresolved local label\n",
+                            stmt->location.filename,
+                            stmt->location.line);
+                    exit(-1);
                 }
-                reflist_clear(&local_reflist);
+                reflist_transfer(&reflist, &local_reflist);
                 hashmap_clear(local_label_map);
                 hashmap_insert(label_map,
                                label->name,
@@ -220,7 +305,9 @@ bin_buffer_t* assemble(ast_t* ast)
                     }
                     else
                     {
-                        reflist_insert(&reflist, buffer->virtual_location, expr);
+                        reflist_insert(&reflist,
+                                       stmt->location,
+                                       buffer->virtual_location, expr);
                         dataval->value = NULL;
                         buffer_append(buffer, 0);
                     }
@@ -232,24 +319,37 @@ bin_buffer_t* assemble(ast_t* ast)
             struct ast_datrs* datrs = (struct ast_datrs*)stmt;
             expr_eval_current(&datrs->size_expr, buffer->virtual_location);
             int size = expr_eval(datrs->size_expr);
+            if (size == -1)
+            {
+                fprintf(stderr, "%s:%i. could not evaluate expression ",
+                        stmt->location.filename,
+                        stmt->location.line);
+                expr_fprint(stderr, datrs->size_expr);
+                fprintf(stderr, "\n");
+                exit(-1);
+            }
             for (int i = 0; i < size; i++)
                 buffer_append(buffer, 0x0000);
         }
     }
 
-    // Set label locations at label references
-    for (int i = 0; i < local_reflist.size; i++) // last local labels
-    {
-        valueref_t *ref = reflist_get(&local_reflist, i);
-        expr_eval_labels(&(ref->expr), local_label_map);
-        int value = expr_eval(ref->expr);
-        buffer_set(buffer, ref->location, value);
-    }
+    reflist_eval_labels(&local_reflist, local_label_map);
+    reflist_transfer(&reflist, &local_reflist);
+
     for (int i = 0; i < reflist.size; i++) // global labels
     {
         valueref_t *ref = reflist_get(&reflist, i);
         expr_eval_labels(&(ref->expr), label_map);
         int value = expr_eval(ref->expr);
+        if (value == -1)
+        {
+            fprintf(stderr, "%s:%i. could not evaluate expression ",
+                    ref->source_location.filename,
+                    ref->source_location.line);
+            expr_fprint(stderr, ref->expr);
+            fprintf(stderr, "\n");
+            exit(-1);
+        }
         buffer_set(buffer, ref->location, value);
     }
 

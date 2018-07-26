@@ -35,6 +35,72 @@ expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs)
     return expr;
 }
 
+void expr_fprint(FILE* file_handle, expr_t *expr)
+{
+    if (expr == NULL)
+    {
+        printf("NULL_POINTER");
+        return;
+    }
+    switch (expr->nodetype)
+    {
+    case EXPR_INT:
+        fprintf(file_handle, "%i", ((expr_int_t*)expr)->value);
+        break;
+    case EXPR_CURRENT:
+        fprintf(file_handle, "$");
+        break;
+    case EXPR_LABEL:
+        fprintf(file_handle, "%s", ((expr_label_t*)expr)->name);
+        break;
+    case EXPR_ADD:
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->lhs);
+        fprintf(file_handle, ")");
+        fprintf(file_handle, " + ");
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->rhs);
+        fprintf(file_handle, ")");
+        break;
+    case EXPR_SUB:
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->lhs);
+        fprintf(file_handle, ")");
+        fprintf(file_handle, " - ");
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->rhs);
+        fprintf(file_handle, ")");
+        break;
+    case EXPR_MUL:
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->lhs);
+        fprintf(file_handle, ")");
+        fprintf(file_handle, " * ");
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->rhs);
+        fprintf(file_handle, ")");
+        break;
+    case EXPR_DIV:
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->lhs);
+        fprintf(file_handle, ")");
+        fprintf(file_handle, " / ");
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->rhs);
+        fprintf(file_handle, ")");
+        break;
+    case EXPR_MOD:
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->lhs);
+        fprintf(file_handle, ")");
+        fprintf(file_handle, " %% ");
+        fprintf(file_handle, "(");
+        expr_fprint(file_handle, ((expr_binop_t*)expr)->rhs);
+        fprintf(file_handle, ")");
+        break;
+    }
+}
+
 static
 void _expr_eval_labels(expr_t **expr, hashmap_t *label_map)
 {
@@ -152,20 +218,47 @@ void expr_simplify(expr_t **expr)
     }
 }
 
-uint16_t expr_eval(expr_t *expr)
+int expr_eval(expr_t *expr)
 {
     expr_t *e = expr;
     expr_simplify(&e);
     if (e->nodetype != EXPR_INT)
-    {
-        fprintf(stderr, "Could not evaluate expression\n");
-        exit(-1);
-    }
+        return -1;
     return ((expr_int_t*)e)->value;
+}
+
+int expr_count_labels(expr_t *expr, int (*filter)(char *))
+{
+    if (expr == NULL)
+        return 0;
+
+    switch (expr->nodetype)
+    {
+    case EXPR_LABEL:
+        if (filter(((expr_label_t*)expr)->name))
+            return 1;
+        return 0;
+    case EXPR_ADD:
+    case EXPR_SUB:
+    case EXPR_MUL:
+    case EXPR_DIV:
+    case EXPR_MOD:
+        {
+            int lhs = expr_count_labels(((expr_binop_t*)expr)->lhs, filter);
+            int rhs = expr_count_labels(((expr_binop_t*)expr)->rhs, filter);
+            return lhs + rhs;
+            break;
+        }
+    default:
+        break;
+    }
 }
 
 void expr_destroy(expr_t* expr)
 {
+    if (expr == NULL)
+        return;
+
     switch (expr->nodetype)
     {
     case EXPR_LABEL:

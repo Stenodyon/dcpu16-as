@@ -43,10 +43,14 @@ expr_label_t * expr_label_make(char * label);
 expr_t * expr_current_make(void);
 expr_binop_t * expr_binop_make(int op, expr_t *lhs, expr_t *rhs);
 
+void expr_fprint(FILE* file_handle, expr_t *expr);
+
 void expr_eval_labels(expr_t **expr, hashmap_t *label_map);
 void expr_eval_current(expr_t **expr, int current_byte);
 void expr_simplify(expr_t **expr);
-uint16_t expr_eval(expr_t *expr);
+int expr_eval(expr_t *expr);
+
+int expr_count_labels(expr_t *expr, int (*filter)(char *));
 
 void expr_destroy(expr_t* expr);
 

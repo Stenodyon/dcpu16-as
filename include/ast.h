@@ -21,20 +21,31 @@ typedef struct ast_operand operand_t;
 #define AST_DATAW 3
 #define AST_DATRS 4
 
+typedef struct
+{
+    char * filename;
+    int line;
+} ast_location_t;
+
 struct ast_statement
 {
     int nodetype;
+    ast_location_t location;
 };
 
 struct ast_label
 {
     int nodetype;
+    ast_location_t location;
+
     char* name;
 };
 
 struct ast_instr
 {
     int nodetype;
+    ast_location_t location;
+
     int opcode;
     operand_t *a, *b;
 };
@@ -48,6 +59,8 @@ struct ast_dataw_val
 struct ast_dataw
 {
     int nodetype;
+    ast_location_t location;
+
     int capacity;
     int size;
     struct ast_dataw_val *data;
@@ -56,6 +69,8 @@ struct ast_dataw
 struct ast_datrs
 {
     int nodetype;
+    ast_location_t location;
+
     expr_t *size_expr;
 };
 
@@ -71,10 +86,11 @@ typedef struct ast_stmt_list ast_t;
 operand_t* ast_make_operand(int id, uint16_t nextword);
 void ast_destroy_operand(operand_t * operand);
 
-struct ast_label* ast_make_label(char * label);
-struct ast_instr* ast_make_instr(int opcode, operand_t* a, operand_t* b);
-struct ast_dataw* ast_make_dataw(void);
-struct ast_datrs* ast_make_datrs(expr_t *size_expr);
+struct ast_label* ast_make_label(ast_location_t location, char * label);
+struct ast_instr* ast_make_instr(ast_location_t location,
+                                 int opcode, operand_t* a, operand_t* b);
+struct ast_dataw* ast_make_dataw(ast_location_t location);
+struct ast_datrs* ast_make_datrs(ast_location_t location, expr_t *size_expr);
 void ast_destroy_stmt(struct ast_statement* stmt);
 
 void ast_dataw_addint(struct ast_dataw *dataw, uint16_t value);

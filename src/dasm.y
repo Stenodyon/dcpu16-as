@@ -13,15 +13,15 @@
 //extern YYLTYPE yylloc;
 extern int yylineno;
 extern int yylex();
-extern int yyparse(ast_t** _result);
+extern int yyparse(ast_t **_result, char *filename);
 extern FILE *yyin;
 
-void yyerror(ast_t ** _result, const char *s);
+void yyerror(ast_t **_result, char *filename, const char *s);
 %}
 
 %define parse.error verbose
 %define parse.lac full
-%parse-param {ast_t** _result}
+%parse-param {ast_t** _result} {char *filename}
 %locations
 
 %union {
@@ -88,6 +88,7 @@ void yyerror(ast_t ** _result, const char *s);
 %%
 
 program: dasm {
+        yylineno = 1; // Reset for next file
         };
 
 dasm: %empty {
@@ -214,25 +215,33 @@ monopcode: DBH { $$ = ast_make_operand(0x00, 0); }
          ;
 
 instruction: bin_opcode writable_operand COLON readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr($1, $4, $2); }
+            ast_location_t location = {filename, yylineno};
+            $$ = (struct ast_statement*)ast_make_instr(location, $1, $4, $2);
+            }
            | test_opcode readable_operand COLON readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr($1, $4, $2); }
+            ast_location_t location = {filename, yylineno};
+            $$ = (struct ast_statement*)ast_make_instr(location, $1, $4, $2); }
            | unopcode_w writable_operand {
-            $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
+            ast_location_t location = {filename, yylineno};
+            $$ = (struct ast_statement*)ast_make_instr(location, 0, $2, $1); }
            | unopcode_r readable_operand {
-            $$ = (struct ast_statement*)ast_make_instr(0, $2, $1); }
+            ast_location_t location = {filename, yylineno};
+            $$ = (struct ast_statement*)ast_make_instr(location, 0, $2, $1); }
            | monopcode {
+            ast_location_t location = {filename, yylineno};
             operand_t *empty = ast_make_operand(0, 0);
-            $$ = (struct ast_statement*)ast_make_instr(0, $1, empty); }
+            $$ = (struct ast_statement*)ast_make_instr(location, 0, $1, empty); }
            ;
 
 data_list: expression {
-            struct ast_dataw* dataw = ast_make_dataw();
+            ast_location_t location = {filename, yylineno};
+            struct ast_dataw* dataw = ast_make_dataw(location);
             ast_dataw_addexp(dataw, $1);
             $$ = dataw;
          }
          | STRING_LIT {
-            struct ast_dataw* dataw = ast_make_dataw();
+            ast_location_t location = {filename, yylineno};
+            struct ast_dataw* dataw = ast_make_dataw(location);
             ast_dataw_addstr(dataw, $1);
             $$ = dataw;
          }
@@ -250,13 +259,17 @@ data_list: expression {
 
 statement: instruction   { $$ = $1; }
          | LABEL         {
-             $$ = (struct ast_statement*)ast_make_label($1);
+             ast_location_t location = {filename, yylineno};
+             $$ = (struct ast_statement*)ast_make_label(location, $1);
              #ifdef _DEBUG
                 printf("label '%s'\n", $1);
              #endif
              }
          | DAT data_list  { $$ = (struct ast_statement*)$2; }
-         | RES expression { $$ = (struct ast_statement*)ast_make_datrs($2); }
+         | RES expression {
+           ast_location_t location = {filename, yylineno};
+           $$ = (struct ast_statement*)ast_make_datrs(location, $2);
+         }
          ;
 
 expression: term { $$ = $1; }
@@ -292,9 +305,9 @@ factor: VALUE { $$ = (expr_t*)expr_int_make($1); }
 
 %%
 
-void yyerror(ast_t ** _result, const char * s)
+void yyerror(ast_t ** _result, char * filename, const char * s)
 {
     (void)_result;
-    fprintf(stderr, "line %d: parse error: %s\n", yylineno, s);
+    fprintf(stderr, "%s:%d. parse error: %s\n", filename, yylineno, s);
     exit(-1);
 }
