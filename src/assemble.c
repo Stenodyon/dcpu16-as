@@ -281,9 +281,10 @@ bin_buffer_t* assemble(ast_t* ast)
                 int index = reflist_find_locals(&local_reflist);
                 if (index != -1)
                 {
+                    valueref_t *ref = reflist_get(&local_reflist, index);
                     fprintf(stderr, "%s:%i Unresolved local label\n",
-                            stmt->location.filename,
-                            stmt->location.line);
+                            ref->source_location.filename,
+                            ref->source_location.line);
                     exit(-1);
                 }
                 reflist_transfer(&reflist, &local_reflist);
