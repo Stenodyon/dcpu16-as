@@ -29,3 +29,9 @@ Dependencies:
   * GNU make
 
 Build with `make`
+
+## Using `DAT`
+`DAT comma, separated, expressions, and, "string literals"`
+
+## Using `RES`
+````RES expression```` will reserve a number of bytes given by `expression`
